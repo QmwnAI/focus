@@ -288,9 +288,21 @@
   .scene-btn.on { border-color: var(--text); color: var(--text); background: var(--btn-bg); }
 
   .stations {
-    display:grid;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+.stn-grid {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap:6px;
+    gap: 6px;
+  }
+.stn-group-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
   }
   .stn {
     position:relative;
@@ -785,14 +797,19 @@
 
   // ===================== SomaFM =====================
   const STATIONS = [
-    { id: 'groovesalad',  name: 'Groove Salad',   desc: 'ambient / downtempo', icon: 'ti-plant-2',     url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
-    { id: 'dronezone',    name: 'Drone Zone',     desc: 'atmospheric ambient', icon: 'ti-radar-2',     url: 'https://ice1.somafm.com/dronezone-128-mp3' },
-    { id: 'deepspaceone', name: 'Deep Space One', desc: 'deep ambient',        icon: 'ti-planet',      url: 'https://ice1.somafm.com/deepspaceone-128-mp3' },
-    { id: 'spacestation', name: 'Space Station',  desc: 'ambient downtempo',   icon: 'ti-rocket',      url: 'https://ice1.somafm.com/spacestation-128-mp3' },
-    { id: 'lush',         name: 'Lush',           desc: 'mellow vocals',       icon: 'ti-feather',     url: 'https://ice1.somafm.com/lush-128-mp3' },
-    { id: 'fluid',        name: 'Fluid',          desc: 'chilled hip-hop',     icon: 'ti-droplet',     url: 'https://ice1.somafm.com/fluid-128-mp3' },
-    { id: 'beatblender',  name: 'Beat Blender',   desc: 'deep house',          icon: 'ti-music',       url: 'https://ice1.somafm.com/beatblender-128-mp3' },
-    { id: 'secretagent',  name: 'Secret Agent',   desc: 'spy-jazz lounge',     icon: 'ti-user-shield', url: 'https://ice1.somafm.com/secretagent-128-mp3' }
+    { id: 'groovesalad',  name: 'Groove Salad',   desc: 'ambient / downtempo', icon: 'ti-plant-2',     url: 'https://ice1.somafm.com/groovesalad-128-mp3', group: 'soma' },
+    { id: 'dronezone',    name: 'Drone Zone',     desc: 'atmospheric ambient', icon: 'ti-radar-2',     url: 'https://ice1.somafm.com/dronezone-128-mp3', group: 'soma' },
+    { id: 'deepspaceone', name: 'Deep Space One', desc: 'deep ambient',        icon: 'ti-planet',      url: 'https://ice1.somafm.com/deepspaceone-128-mp3', group: 'soma' },
+    { id: 'spacestation', name: 'Space Station',  desc: 'ambient downtempo',   icon: 'ti-rocket',      url: 'https://ice1.somafm.com/spacestation-128-mp3', group: 'soma' },
+    { id: 'lush',         name: 'Lush',           desc: 'mellow vocals',       icon: 'ti-feather',     url: 'https://ice1.somafm.com/lush-128-mp3', group: 'soma' },
+    { id: 'fluid',        name: 'Fluid',          desc: 'chilled hip-hop',     icon: 'ti-droplet',     url: 'https://ice1.somafm.com/fluid-128-mp3', group: 'soma' },
+    { id: 'beatblender',  name: 'Beat Blender',   desc: 'deep house',          icon: 'ti-music',       url: 'https://ice1.somafm.com/beatblender-128-mp3', group: 'soma' },
+    { id: 'secretagent',  name: 'Secret Agent',   desc: 'spy-jazz lounge',     icon: 'ti-user-shield', url: 'https://ice1.somafm.com/secretagent-128-mp3', group: 'soma' },
+    { id: 'folkforward',  name: 'Folk Forward',   desc: 'indie folk / alt-folk', icon: 'ti-guitar-pick', url: 'https://ice1.somafm.com/folkfwd-128-mp3', group: 'soma' },
+    { id: 'kexp',         name: 'KEXP Seattle',   desc: 'indie rock / singer-songwriter', icon: 'ti-broadcast', url: 'https://kexp.streamguys1.com/kexp160.aac', group: 'public' },
+    { id: 'thecurrent',   name: 'The Current',    desc: 'indie rock / pop',    icon: 'ti-antenna',     url: 'https://current.stream.publicradio.org/kcmp.mp3', group: 'public' },
+    { id: 'folkalley',    name: 'Folk Alley',     desc: 'folk / roots / americana', icon: 'ti-piano',   url: 'https://8gvs139q45mkbqxg.leanstream.co/8GVS139Q45MKBQXG?type=.mp3', group: 'public' },
+    { id: 'radioparadise', name: 'Radio Paradise', desc: 'eclectic rock / mellow mix', icon: 'ti-disc', url: 'https://stream.radioparadise.com/mellow-128', group: 'public' }
   ];
 
   const stationsEl = document.getElementById('stations');
@@ -805,19 +822,36 @@
   audio.volume = volInput.value / 100;
   let currentStation = null;
 
-  STATIONS.forEach(s => {
-    const b = document.createElement('button');
-    b.className = 'stn';
-    b.dataset.id = s.id;
-    b.innerHTML = `
-      <i class="ti ${s.icon} stn-icon"></i>
-      <div style="flex:1; min-width:0;">
-        <div style="font-weight:500; line-height:1.2;">${s.name}</div>
-        <div style="font-size:11px; opacity:0.6; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.desc}</div>
-      </div>
-    `;
-    b.onclick = () => toggleStation(s, b);
-    stationsEl.appendChild(b);
+  const GROUP_LABELS = { soma: 'SomaFM', public: 'Public Radio' };
+
+  ['soma', 'public'].forEach(groupKey => {
+      const groupStations = STATIONS.filter(s => s.group === groupKey);
+      if (!groupStations.length) return;
+  
+      const header = document.createElement('div');
+      header.className = 'stn-group-label';
+      header.textContent = GROUP_LABELS[groupKey];
+      stationsEl.appendChild(header);
+  
+      const grid = document.createElement('div');
+      grid.className = 'stn-grid';
+  
+      groupStations.forEach(s => {
+          const b = document.createElement('button');
+          b.className = 'stn';
+          b.dataset.id = s.id;
+          b.innerHTML = `
+            <i class="ti ${s.icon} stn-icon"></i>
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:500; line-height:1.2;">${s.name}</div>
+              <div style="font-size:11px; opacity:0.6; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.desc}</div>
+            </div>
+          `;
+          b.onclick = () => toggleStation(s, b);
+          grid.appendChild(b);
+      });
+  
+      stationsEl.appendChild(grid);
   });
 
   function stopStation() {
