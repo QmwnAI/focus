@@ -5,6 +5,7 @@
 <title>Focus</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
+<script src="https://www.youtube.com/iframe_api"></script>
 <style>
   :root {
     --bg: #050710;
@@ -292,12 +293,12 @@
     flex-direction: column;
     gap: 10px;
   }
-.stn-grid {
+  .stn-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
-.stn-group-label {
+  .stn-group-label {
     font-size: 10px;
     color: var(--text-muted);
     letter-spacing: 1.5px;
@@ -326,6 +327,32 @@
   .stn > * { position:relative; z-index:1; }
   .stn .stn-icon { font-size:18px; opacity:0.7; }
   .stn.loading .stn-icon { animation: spin-slow 1s linear infinite; }
+
+  .custom-audio {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .yt-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .yt-input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: transparent;
+    border: 0.5px solid var(--btn-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .yt-input:focus { border-color: var(--text); background: var(--btn-bg); }
+  .yt-input::placeholder { color: var(--text-muted); }
 
   .now-playing {
     margin-top:12px;
@@ -508,6 +535,26 @@
     <div class="panel-row">
       <p class="section-label">Music</p>
       <div class="stations" id="stations"></div>
+
+      <div class="stn-group-label" style="margin-top:10px;">Custom</div>
+      <div class="custom-audio">
+        <label class="stn" for="mp3-upload" style="cursor:pointer;">
+          <i class="ti ti-upload stn-icon"></i>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:500; line-height:1.2;" id="mp3-label">Upload MP3</div>
+            <div style="font-size:11px; opacity:0.6;">play a file from your device</div>
+          </div>
+        </label>
+        <input type="file" id="mp3-upload" accept="audio/*" style="display:none;">
+
+        <div class="yt-row">
+          <input type="text" id="yt-input" class="yt-input" placeholder="Paste a YouTube link…">
+          <button class="ctl" id="yt-play-btn" aria-label="Play YouTube link">
+            <i class="ti ti-player-play" style="font-size:16px;"></i>
+          </button>
+        </div>
+      </div>
+
       <div class="now-playing" id="np" style="display:none;">
         <span class="np-dot"></span>
         <span class="np-text" id="np-text">Connecting...</span>
@@ -560,6 +607,10 @@
 </div>
 
 <audio id="audio" preload="none"></audio>
+
+<div id="yt-player-wrap" style="position:absolute; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none;">
+  <div id="yt-player-container"></div>
+</div>
 
 <script>
   // ===================== State =====================
@@ -795,7 +846,7 @@
     document.body.classList.toggle('pomo-on', pomoOn);
   };
 
-  // ===================== SomaFM =====================
+  // ===================== Stations =====================
   const STATIONS = [
     { id: 'groovesalad',  name: 'Groove Salad',   desc: 'ambient / downtempo', icon: 'ti-plant-2',     url: 'https://ice1.somafm.com/groovesalad-128-mp3', group: 'soma' },
     { id: 'dronezone',    name: 'Drone Zone',     desc: 'atmospheric ambient', icon: 'ti-radar-2',     url: 'https://ice1.somafm.com/dronezone-128-mp3', group: 'soma' },
@@ -806,7 +857,6 @@
     { id: 'beatblender',  name: 'Beat Blender',   desc: 'deep house',          icon: 'ti-music',       url: 'https://ice1.somafm.com/beatblender-128-mp3', group: 'soma' },
     { id: 'secretagent',  name: 'Secret Agent',   desc: 'spy-jazz lounge',     icon: 'ti-user-shield', url: 'https://ice1.somafm.com/secretagent-128-mp3', group: 'soma' },
     { id: 'folkforward',  name: 'Folk Forward',   desc: 'indie folk / alt-folk', icon: 'ti-guitar-pick', url: 'https://ice1.somafm.com/folkfwd-128-mp3', group: 'soma' },
-    { id: 'kexp',         name: 'KEXP Seattle',   desc: 'indie rock / singer-songwriter', icon: 'ti-broadcast', url: 'https://kexp.streamguys1.com/kexp160.aac', group: 'public' },
     { id: 'thecurrent',   name: 'The Current',    desc: 'indie rock / pop',    icon: 'ti-antenna',     url: 'https://current.stream.publicradio.org/kcmp.mp3', group: 'public' },
     { id: 'folkalley',    name: 'Folk Alley',     desc: 'folk / roots / americana', icon: 'ti-piano',   url: 'https://8gvs139q45mkbqxg.leanstream.co/8GVS139Q45MKBQXG?type=.mp3', group: 'public' },
     { id: 'radioparadise', name: 'Radio Paradise', desc: 'eclectic rock / mellow mix', icon: 'ti-disc', url: 'https://stream.radioparadise.com/mellow-128', group: 'public' },
@@ -827,38 +877,42 @@
   const GROUP_LABELS = { soma: 'SomaFM', public: 'Public Radio', anime: 'Anime / J-Pop' };
 
   ['soma', 'public', 'anime'].forEach(groupKey => {
-      const groupStations = STATIONS.filter(s => s.group === groupKey);
-      if (!groupStations.length) return;
-  
-      const header = document.createElement('div');
-      header.className = 'stn-group-label';
-      header.textContent = GROUP_LABELS[groupKey];
-      stationsEl.appendChild(header);
-  
-      const grid = document.createElement('div');
-      grid.className = 'stn-grid';
-  
-      groupStations.forEach(s => {
-          const b = document.createElement('button');
-          b.className = 'stn';
-          b.dataset.id = s.id;
-          b.innerHTML = `
-            <i class="ti ${s.icon} stn-icon"></i>
-            <div style="flex:1; min-width:0;">
-              <div style="font-weight:500; line-height:1.2;">${s.name}</div>
-              <div style="font-size:11px; opacity:0.6; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.desc}</div>
-            </div>
-          `;
-          b.onclick = () => toggleStation(s, b);
-          grid.appendChild(b);
-      });
-  
-      stationsEl.appendChild(grid);
+    const groupStations = STATIONS.filter(s => s.group === groupKey);
+    if (!groupStations.length) return;
+
+    const header = document.createElement('div');
+    header.className = 'stn-group-label';
+    header.textContent = GROUP_LABELS[groupKey];
+    stationsEl.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'stn-grid';
+
+    groupStations.forEach(s => {
+      const b = document.createElement('button');
+      b.className = 'stn';
+      b.dataset.id = s.id;
+      b.innerHTML = `
+        <i class="ti ${s.icon} stn-icon"></i>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:500; line-height:1.2;">${s.name}</div>
+          <div style="font-size:11px; opacity:0.6; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.desc}</div>
+        </div>
+      `;
+      b.onclick = () => toggleStation(s, b);
+      grid.appendChild(b);
+    });
+
+    stationsEl.appendChild(grid);
   });
 
   function stopStation() {
     audio.pause();
     audio.src = '';
+    audio.loop = false;
+    if (ytPlayer && ytReady) {
+      try { ytPlayer.stopVideo(); } catch (e) {}
+    }
     document.querySelectorAll('.stn').forEach(x => x.classList.remove('on','loading'));
     np.style.display = 'none';
     currentStation = null;
@@ -866,6 +920,7 @@
 
   function toggleStation(s, btn) {
     if (currentStation === s.id) { stopStation(); return; }
+    stopStation();
     document.querySelectorAll('.stn').forEach(x => x.classList.remove('on','loading'));
     btn.classList.add('loading');
     npText.textContent = 'Connecting to ' + s.name + '...';
@@ -887,7 +942,79 @@
 
   volInput.oninput = e => {
     audio.volume = e.target.value / 100;
+    if (ytPlayer && ytReady) ytPlayer.setVolume(parseInt(e.target.value));
     localStorage.setItem('focus-vol', e.target.value);
+  };
+
+  // ===================== Custom: MP3 upload =====================
+  const mp3Upload = document.getElementById('mp3-upload');
+  const mp3Label = document.getElementById('mp3-label');
+
+  mp3Upload.onchange = () => {
+    const file = mp3Upload.files[0];
+    if (!file) return;
+    stopStation();
+    audio.src = URL.createObjectURL(file);
+    audio.loop = true;
+    audio.play()
+      .then(() => {
+        currentStation = 'mp3';
+        npText.textContent = 'Playing: ' + file.name;
+        np.style.display = 'flex';
+        mp3Label.textContent = file.name;
+      })
+      .catch(err => {
+        npText.textContent = 'Could not play that file.';
+        np.style.display = 'flex';
+        console.error(err);
+      });
+  };
+
+  // ===================== Custom: YouTube link =====================
+  let ytPlayer = null;
+  let ytReady = false;
+  let pendingVideoId = null;
+
+  function extractYouTubeId(url) {
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('yt-player-container', {
+      height: '1',
+      width: '1',
+      videoId: '',
+      playerVars: { autoplay: 0, controls: 0 },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          ytPlayer.setVolume(parseInt(volInput.value));
+          if (pendingVideoId) { playYouTube(pendingVideoId); pendingVideoId = null; }
+        },
+        onStateChange: (e) => {                 // ADD THIS
+          if (e.data === YT.PlayerState.ENDED) {
+            ytPlayer.playVideo();
+          }
+        }
+      }
+    });
+  }
+  function playYouTube(id) {
+    if (!ytReady) { pendingVideoId = id; return; }
+    stopStation();
+    ytPlayer.loadVideoById(id);
+    ytPlayer.setVolume(parseInt(volInput.value));
+    currentStation = 'yt';
+    npText.textContent = 'Playing YouTube audio…';
+    np.style.display = 'flex';
+  }
+
+  document.getElementById('yt-play-btn').onclick = () => {
+    const url = document.getElementById('yt-input').value.trim();
+    const id = extractYouTubeId(url);
+    if (!id) { alert('Please paste a valid YouTube link.'); return; }
+    playYouTube(id);
   };
 
   // ===================== Stats =====================
