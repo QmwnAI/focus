@@ -856,9 +856,7 @@
     { id: 'fluid',        name: 'Fluid',          desc: 'chilled hip-hop',     icon: 'ti-droplet',     url: 'https://ice1.somafm.com/fluid-128-mp3', group: 'soma' },
     { id: 'beatblender',  name: 'Beat Blender',   desc: 'deep house',          icon: 'ti-music',       url: 'https://ice1.somafm.com/beatblender-128-mp3', group: 'soma' },
     { id: 'secretagent',  name: 'Secret Agent',   desc: 'spy-jazz lounge',     icon: 'ti-user-shield', url: 'https://ice1.somafm.com/secretagent-128-mp3', group: 'soma' },
-    { id: 'folkforward',  name: 'Folk Forward',   desc: 'indie folk / alt-folk', icon: 'ti-guitar-pick', url: 'https://ice1.somafm.com/folkfwd-128-mp3', group: 'soma' },
-    { id: 'listenmoe-jpop', name: 'LISTEN.moe J-Pop', desc: 'anime / j-pop, 24/7', icon: 'ti-cherry',  url: 'https://listen.moe/fallback', group: 'anime' },
-    { id: 'listenmoe-kpop', name: 'LISTEN.moe K-Pop', desc: 'k-pop / anime hits',  icon: 'ti-microphone-2', url: 'https://listen.moe/kpop/fallback', group: 'anime' }
+    { id: 'folkforward',  name: 'Folk Forward',   desc: 'indie folk / alt-folk', icon: 'ti-guitar-pick', url: 'https://ice1.somafm.com/folkfwd-128-mp3', group: 'soma' }
   ];
 
   const stationsEl = document.getElementById('stations');
@@ -871,9 +869,9 @@
   audio.volume = volInput.value / 100;
   let currentStation = null;
 
-  const GROUP_LABELS = { soma: 'SomaFM', anime: 'Anime / J-Pop' };
+  const GROUP_LABELS = { soma: 'SomaFM'};
 
-  ['soma', 'anime'].forEach(groupKey => {
+  ['soma'].forEach(groupKey => {
     const groupStations = STATIONS.filter(s => s.group === groupKey);
     if (!groupStations.length) return;
 
