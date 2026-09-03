@@ -98,7 +98,8 @@
   .stage {
     position: relative;
     width: 100%;
-    height: 420px;
+    height: min(68vh, 620px);
+    min-height: 460px;
     border-radius: 16px;
     overflow: hidden;
     transition: background 0.6s ease;
@@ -454,11 +455,29 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     letter-spacing: 0.3px;
   }
   .kbd { display: inline-block; padding: 1px 6px; border-radius: 3px; border: 0.5px solid var(--btn-border); background: var(--btn-bg); font-family: 'SF Mono', monospace; font-size: 10px; margin: 0 2px; }
+
+  .stage::before,.stage::after{content:'';position:absolute;inset:-25%;pointer-events:none;z-index:0}
+  .stage::before{background:radial-gradient(circle,rgba(255,255,255,.35) 0 1px,transparent 1.6px);background-size:110px 110px;animation:skyDrift 38s linear infinite;opacity:.35}
+  .stage::after{filter:blur(45px);opacity:.55;animation:atmo 15s ease-in-out infinite alternate}
+  .scene-night .stage::after{background:conic-gradient(from 210deg,transparent,rgba(93,110,255,.3),transparent 38%,rgba(208,91,255,.2),transparent 72%)}
+  .scene-sunset .stage::after{background:linear-gradient(120deg,transparent 12%,rgba(255,101,91,.3),rgba(255,190,91,.25),transparent 82%)}
+  .scene-forest .stage::after{background:radial-gradient(ellipse at 20% 80%,rgba(68,255,157,.28),transparent 45%),radial-gradient(ellipse at 80% 20%,rgba(166,255,96,.2),transparent 42%)}
+  .scene-aurora .stage::after{background:linear-gradient(115deg,transparent 12%,rgba(74,255,214,.32) 28%,transparent 46%,rgba(173,94,255,.34) 62%,transparent 82%);animation:auroraFlow 10s ease-in-out infinite alternate}
+  @keyframes skyDrift{to{transform:translate(9%,-7%) rotate(2deg)}} @keyframes atmo{to{transform:translate(5%,4%) scale(1.15)}} @keyframes auroraFlow{from{transform:translateX(-8%) skewY(-8deg)}to{transform:translateX(8%) skewY(5deg) scaleY(1.25)}}
+  body.focus-mode{padding:0;overflow:hidden} body.focus-mode .app{max-width:none;height:100vh}
+  body.focus-mode .panel,body.focus-mode .kbd-hint,body.focus-mode .top-bar,body.focus-mode .controls{opacity:0;pointer-events:none}
+  body.focus-mode .stage{position:fixed;inset:0;width:100vw;height:100vh;min-height:100vh;border-radius:0;z-index:10}
+  body.focus-mode .center{z-index:12}
+  body.focus-mode .goal-input{position:fixed;z-index:20;left:50%;bottom:9vh;transform:translateX(-50%);width:min(560px,80vw);background:transparent;border-color:transparent;color:var(--text)}
+  .focus-exit{display:none;position:fixed;top:22px;right:22px;z-index:40} body.focus-mode .focus-exit{display:flex}
+  body.focus-mode.controls-awake .controls{opacity:1;pointer-events:auto;position:fixed;z-index:30;bottom:3vh;left:50%;transform:translateX(-50%)}
 </style>
 </head>
 <body class="scene-night">
 <div class="app">
+  <button class="icon-btn focus-exit" id="focus-exit" aria-label="Exit focus mode"><i class="ti ti-minimize" style="font-size:18px;"></i></button>
   <div class="top-bar">
+    <button class="icon-btn" id="focus-mode-btn" aria-label="Focus mode"><i class="ti ti-maximize" style="font-size:18px;"></i></button>
     <button class="icon-btn" id="stats-btn" aria-label="Stats">
       <i class="ti ti-chart-bar" style="font-size:18px;"></i>
     </button>
@@ -544,11 +563,8 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
 
         <div class="yt-row">
           <input type="text" id="yt-input" class="yt-input" placeholder="Paste a YouTube video or playlist link…">
-          <button class="ctl" id="yt-play-btn" aria-label="Play YouTube link">
-            <i class="ti ti-player-play" style="font-size:16px;"></i>
-          </button>
-          <button class="ctl" id="yt-pause-btn" aria-label="Pause YouTube" style="display:none;">
-            <i class="ti ti-player-pause" id="yt-pause-icon" style="font-size:16px;"></i>
+          <button class="ctl" id="yt-toggle-btn" aria-label="Play or pause YouTube">
+            <i class="ti ti-player-play" id="yt-toggle-icon" style="font-size:16px;"></i>
           </button>
         </div>
       </div>
@@ -905,8 +921,8 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     }
     ytIsPlaying = false;
     ytIsPlaylist = false;
-    ytPauseBtn.style.display = 'none';
-    ytPauseIcon.className = 'ti ti-player-pause';
+    
+    ytToggleIcon.className = 'ti ti-player-pause';
     document.querySelectorAll('.stn').forEach(x => x.classList.remove('on','loading'));
     np.style.display = 'none';
     currentStation = null;
@@ -971,8 +987,8 @@ function toggleStation(s, btn) {
   let ytIsPlaylist = false;
   let ytIsPlaying = false;
 
-  const ytPauseBtn = document.getElementById('yt-pause-btn');
-  const ytPauseIcon = document.getElementById('yt-pause-icon');
+  const ytToggleBtn = document.getElementById('yt-toggle-btn');
+  const ytToggleIcon = document.getElementById('yt-toggle-icon');
 
   function extractYouTubeId(url) {
     const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
@@ -1000,10 +1016,10 @@ function toggleStation(s, btn) {
         onStateChange: (e) => {
           if (e.data === YT.PlayerState.PLAYING) {
             ytIsPlaying = true;
-            ytPauseIcon.className = 'ti ti-player-pause';
+            ytToggleIcon.className = 'ti ti-player-pause';
           } else if (e.data === YT.PlayerState.PAUSED) {
             ytIsPlaying = false;
-            ytPauseIcon.className = 'ti ti-player-play';
+            ytToggleIcon.className = 'ti ti-player-play';
           } else if (e.data === YT.PlayerState.ENDED && !ytIsPlaylist) {
             // loop a single video; playlists advance/loop on their own
             ytPlayer.playVideo();
@@ -1023,8 +1039,8 @@ function toggleStation(s, btn) {
     ytIsPlaying = true;
     npText.textContent = 'Playing YouTube audio…';
     np.style.display = 'flex';
-    ytPauseBtn.style.display = 'flex';
-    ytPauseIcon.className = 'ti ti-player-pause';
+    
+    ytToggleIcon.className = 'ti ti-player-pause';
   }
 
   function playYouTubePlaylist(listId) {
@@ -1038,35 +1054,30 @@ function toggleStation(s, btn) {
     ytIsPlaying = true;
     npText.textContent = 'Playing YouTube playlist…';
     np.style.display = 'flex';
-    ytPauseBtn.style.display = 'flex';
-    ytPauseIcon.className = 'ti ti-player-pause';
+    
+    ytToggleIcon.className = 'ti ti-player-pause';
   }
 
-  document.getElementById('yt-play-btn').onclick = () => {
+  ytToggleBtn.onclick = () => {
     const url = document.getElementById('yt-input').value.trim();
-    const playlistId = extractYouTubePlaylistId(url);
-    const videoId = extractYouTubeId(url);
-    if (playlistId) {
-      playYouTubePlaylist(playlistId);
-    } else if (videoId) {
-      playYouTube(videoId);
-    } else {
-      alert('Please paste a valid YouTube video or playlist link.');
+    if (currentStation === 'yt' && ytPlayer && ytReady) {
+      if (ytIsPlaying) { ytPlayer.pauseVideo(); ytIsPlaying=false; ytToggleIcon.className='ti ti-player-play'; }
+      else { ytPlayer.playVideo(); ytIsPlaying=true; ytToggleIcon.className='ti ti-player-pause'; }
+      return;
     }
+    const playlistId=extractYouTubePlaylistId(url), videoId=extractYouTubeId(url);
+    if (playlistId) playYouTubePlaylist(playlistId);
+    else if (videoId) playYouTube(videoId);
+    else alert('Please paste a valid YouTube video or playlist link.');
   };
 
-  ytPauseBtn.onclick = () => {
-    if (!ytPlayer || !ytReady || currentStation !== 'yt') return;
-    if (ytIsPlaying) {
-      ytPlayer.pauseVideo();
-      ytIsPlaying = false;
-      ytPauseIcon.className = 'ti ti-player-play';
-    } else {
-      ytPlayer.playVideo();
-      ytIsPlaying = true;
-      ytPauseIcon.className = 'ti ti-player-pause';
-    }
-  };
+  const focusModeBtn=document.getElementById('focus-mode-btn'), focusExit=document.getElementById('focus-exit');
+  let focusHideTimer=null;
+  function enterFocusMode(){document.body.classList.add('focus-mode','controls-awake');clearTimeout(focusHideTimer);focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800)}
+  function exitFocusMode(){document.body.classList.remove('focus-mode','controls-awake');clearTimeout(focusHideTimer)}
+  focusModeBtn.onclick=enterFocusMode; focusExit.onclick=exitFocusMode;
+  document.addEventListener('mousemove',()=>{if(!document.body.classList.contains('focus-mode'))return;document.body.classList.add('controls-awake');clearTimeout(focusHideTimer);focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800)});
+
 
   // ===================== Stats =====================
   const statsBtn = document.getElementById('stats-btn');
@@ -1145,6 +1156,7 @@ history.forEach(s => {
 
   // ===================== Keyboard shortcuts =====================
   document.addEventListener('keydown', e => {
+    if(e.key==='Escape'&&document.body.classList.contains('focus-mode')){exitFocusMode();return;}
     if (document.activeElement === goalInput) return;
     if (statsModal.classList.contains('open')) {
       if (e.key === 'Escape') statsModal.classList.remove('open');
