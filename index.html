@@ -1,13 +1,35 @@
+<!--
+  Focus
+  =====
+  Single-screen cinematic focus timer.
+
+  Major systems:
+  1. Full-screen animated scenes
+  2. Focus timer
+  3. Pomodoro cycles and breaks
+  4. SomaFM radio
+  5. YouTube audio
+  6. Local audio upload
+  7. Focus mode
+  8. Session history and statistics
+  9. Keyboard shortcuts
+  10. LocalStorage persistence
+
+  This file is intentionally formatted for readability rather than minimum size.
+-->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Focus</title>
-<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
-<script src="https://www.youtube.com/iframe_api"></script>
-<style>
-:root{--text:#fff;--dim:rgba(255,255,255,.68);--muted:rgba(255,255,255,.43);--glass:rgba(8,12,25,.62);--border:rgba(255,255,255,.14);--accent:#a98cff;--green:#51d88a}
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   Focus
+  </title>
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet"/>
+  <script src="https://www.youtube.com/iframe_api">
+  </script>
+  <style>
+   :root{--text:#fff;--dim:rgba(255,255,255,.68);--muted:rgba(255,255,255,.43);--glass:rgba(8,12,25,.62);--border:rgba(255,255,255,.14);--accent:#a98cff;--green:#51d88a}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--text);background:#071020}
 button,input{font:inherit}.hidden{display:none!important}
@@ -78,10 +100,9 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
 .clear-btn{width:100%;padding:10px;border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:9px}
 .pomo-menu{position:absolute;margin-top:8px;background:rgba(8,12,25,.92);border:1px solid var(--border);border-radius:12px;padding:10px;display:none;min-width:210px;backdrop-filter:blur(20px)}.pomo-menu.open{display:block}.pomo-wrap{position:relative}
 .pomo-opt{display:flex;justify-content:space-between;padding:8px;font-size:13px;color:var(--dim)}.pomo-opt input{accent-color:var(--accent)}
-</style>
-
-<style id="one-screen-layout">
-@media (min-width:951px){
+  </style>
+  <style id="one-screen-layout">
+   @media (min-width:951px){
   html,body{height:100vh!important;overflow:hidden!important}
   .app{
     height:100vh!important;min-height:0!important;
@@ -166,49 +187,503 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
   .station{padding:3px 6px!important}
   .footer{font-size:9px!important}
 }
-</style>
+  </style>
+  <style id="unified-music">
+   @media (min-width:951px){
+  .panel .section:nth-child(4){overflow:hidden!important}
+  .station-list-compact{display:grid;grid-template-columns:1fr;gap:6px}
+  #stationSelect{
+    width:100%;padding:8px 9px;border-radius:9px;border:1px solid var(--border);
+    background:rgba(255,255,255,.07);color:#fff;font-size:11px;outline:none
+  }
+  #stationSelect option{background:#10172a;color:#fff}
+  .music-source-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px}
+  .music-tab{border:0;border-radius:8px;padding:6px 3px;background:rgba(255,255,255,.07);color:var(--dim);font-size:10px;cursor:pointer}
+  .music-tab.on{background:rgba(255,255,255,.15);color:#fff}
+  .music-pane{display:none}.music-pane.on{display:block}
+  .radio-row{display:flex;gap:6px;align-items:center}
+  .radio-row #stationSelect{flex:1}
+  .mini-play{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:50%;background:#fff;color:#101525;cursor:pointer}
+  .compact-upload{width:100%;padding:9px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;font-size:11px}
+}
+  </style>
+  <style id="interaction-cleanup">
+   /*
+  Interaction rules:
+  - Buttons only look clickable when they actually perform an action.
+  - Static navigation/source labels use a normal cursor.
+  - SomaFM and YouTube source labels remain visually polished without pretending
+    to be buttons.
+*/
+.nav-item,
+.source-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--dim);
+  user-select: none;
+  cursor: default;
+}
 
-</head>
-<body>
-<div class="scene scene-sunset" id="scene"><div class="skyglow"></div><div class="stars"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="sun"></div><div class="aurora"></div><div class="mountains"></div><div class="trees"></div><div class="water"></div></div>
-<div class="app">
- <div class="top">
-  <div class="brand"><i class="ti ti-mountain"></i>Focus</div>
-  <div class="nav"><button class="on"><i class="ti ti-clock"></i> Timer</button><button><i class="ti ti-music"></i> Music</button><button><i class="ti ti-leaf"></i> Nature</button><button id="statsBtn"><i class="ti ti-chart-bar"></i> Stats</button><button><i class="ti ti-history"></i> History</button></div>
-  <div class="top-actions"><button class="round" id="focusBtn"><i class="ti ti-maximize"></i></button><button class="round"><i class="ti ti-settings"></i></button></div>
- </div>
- <main class="hero"><div class="greeting">Good evening 🌙</div><div class="time" id="time">45:00</div><button class="start" id="start"><i class="ti ti-player-play" id="startIcon"></i><span id="startText">Start Focus</span></button><div class="pomo-wrap"><button class="pomo" id="pomoBtn"><i class="ti ti-clock"></i>&nbsp; <span id="pomoLabel">Pomodoro</span>⌄</button>
-    <div class="pomo-menu" id="pomoMenu">
-      <label class="pomo-opt">Enable Pomodoro <input type="checkbox" id="pomoToggle"></label>
-      <div class="pomo-opt"><span>Short break</span><span>5 min</span></div>
-      <div class="pomo-opt"><span>Long break</span><span>15 min</span></div>
-      <div class="pomo-opt"><span>Cycle</span><span id="cycleLabel">1 of 4</span></div>
-    </div></div></main>
- <section class="panel">
-  <div class="section"><div class="label">Focus Duration</div><div class="durations"><button class="dur" data-m="25">25<small>min</small></button><button class="dur on" data-m="45">45<small>min</small></button><button class="dur" data-m="60">60<small>min</small></button><button class="dur" data-m="90">90<small>min</small></button></div><div class="breaks"><div>Short Break <span>5 min</span></div><div>Long Break <span>15 min</span></div></div></div>
-  <div class="section"><div class="label">Scene</div><div class="scenes"><button class="scene-btn" data-scene="night"><div class="thumb tn"></div><span>Night</span></button><button class="scene-btn on" data-scene="sunset"><div class="thumb ts"></div><span>Sunset</span></button><button class="scene-btn" data-scene="forest"><div class="thumb tf"></div><span>Forest</span></button><button class="scene-btn" data-scene="aurora"><div class="thumb ta"></div><span>Aurora</span></button></div></div>
-  <div class="section"><div class="label">Now Playing</div><div class="np-title" id="npTitle">Lo-fi Chillhop</div><div class="np-sub">SomaFM</div><div class="eq" id="eq"></div><div class="player"><button><i class="ti ti-player-skip-back"></i></button><button class="pp" id="musicToggle"><i class="ti ti-player-play" id="musicIcon"></i></button><button><i class="ti ti-player-skip-forward"></i></button></div><div class="vol"><i class="ti ti-volume"></i><input type="range" id="vol" min="0" max="100" value="40"></div></div>
-  <div class="section"><div class="sources"><button class="source on">SomaFM</button><button class="source" id="youtubeSource">YouTube</button><button class="source" id="uploadBtn">Upload</button></div><div class="ytrow"><input id="ytInput" placeholder="YouTube video / playlist"><button id="ytToggle"><i class="ti ti-player-play" id="ytIcon"></i></button></div><div style="margin-top:9px"><div class="station on" data-url="https://ice1.somafm.com/groovesalad-128-mp3" data-name="Groove Salad">Groove Salad</div><div class="station" data-url="https://ice1.somafm.com/fluid-128-mp3" data-name="Fluid">Fluid</div><div class="station" data-url="https://ice1.somafm.com/beatblender-128-mp3" data-name="Beat Blender">Beat Blender</div><div class="station" data-url="https://ice1.somafm.com/secretagent-128-mp3" data-name="Secret Agent">Secret Agent</div>
-<div class="station" data-url="https://ice1.somafm.com/dronezone-128-mp3" data-name="Drone Zone">Drone Zone</div>
-<div class="station" data-url="https://ice1.somafm.com/deepspaceone-128-mp3" data-name="Deep Space One">Deep Space One</div>
-<div class="station" data-url="https://ice1.somafm.com/spacestation-128-mp3" data-name="Space Station">Space Station</div>
-<div class="station" data-url="https://ice1.somafm.com/lush-128-mp3" data-name="Lush">Lush</div>
-<div class="station" data-url="https://ice1.somafm.com/folkfwd-128-mp3" data-name="Folk Forward">Folk Forward</div></div><input type="file" id="upload" accept="audio/*" hidden></div>
- </section>
- <div class="footer"><span class="k">Space</span>Start / Pause <span class="k">R</span>Reset <span class="k">F</span>Focus Mode <span class="k">1–4</span>Change Scene</div>
-</div>
+.nav-item {
+  padding: 9px 15px;
+  border-radius: 22px;
+}
 
-<div class="modal-bg" id="statsModal"><div class="modal">
- <div class="modal-head"><h2>Focus stats</h2><button class="round" id="closeStats"><i class="ti ti-x"></i></button></div>
- <div class="stat-grid"><div class="stat-card"><div class="stat-val" id="sStreak">0</div><div class="stat-lbl">Day streak</div></div><div class="stat-card"><div class="stat-val" id="sSessions">0</div><div class="stat-lbl">Sessions</div></div><div class="stat-card"><div class="stat-val" id="sHours">0h</div><div class="stat-lbl">Total time</div></div></div>
- <div class="chart-wrap"><div class="chart-title">Last 7 days (minutes)</div><div class="chart" id="chart"></div><div class="bar-labels" id="barLabels"></div></div>
- <div class="stat-grid"><div class="stat-card"><div class="stat-val" id="sToday">0m</div><div class="stat-lbl">Today</div></div><div class="stat-card"><div class="stat-val" id="sWeek">0h</div><div class="stat-lbl">This week</div></div><div class="stat-card"><div class="stat-val" id="sBest">0m</div><div class="stat-lbl">Longest</div></div></div>
- <button class="clear-btn" id="clearHistory">Clear all history</button>
-</div></div>
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
 
-<audio id="audio"></audio><div id="yt-player" style="position:fixed;width:220px;height:124px;right:16px;bottom:16px;opacity:.001;pointer-events:none"></div>
-<script>
-const BREAK_MINS=5,LONG_BREAK_MINS=15,MAX_CYCLES=4;
+.nav-action {
+  border: 0;
+  padding: 9px 15px;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.nav-action:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+}
+
+.source-label {
+  min-height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid transparent;
+  font-size: 10px;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.source-label.on {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Upload is an actual action, so it retains an intentional pointer state. */
+.upload-tab {
+  cursor: pointer !important;
+}
+
+.upload-tab:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+}
+
+/* Main music player now contains only the functional play/pause control. */
+.player {
+  min-height: 50px;
+}
+
+/* Prevent generic rules from giving static source labels a hand cursor. */
+.music-source-tabs .source-label {
+  cursor: default !important;
+}
+  </style>
+ </head>
+ <body>
+  <div class="scene scene-sunset" id="scene">
+   <div class="skyglow">
+   </div>
+   <div class="stars">
+   </div>
+   <div class="cloud c1">
+   </div>
+   <div class="cloud c2">
+   </div>
+   <div class="sun">
+   </div>
+   <div class="aurora">
+   </div>
+   <div class="mountains">
+   </div>
+   <div class="trees">
+   </div>
+   <div class="water">
+   </div>
+  </div>
+  <div class="app">
+   <div class="top">
+    <div class="brand">
+     <i class="ti ti-mountain">
+     </i>
+     Focus
+    </div>
+    <div aria-label="Application sections" class="nav">
+     <span class="nav-item active">
+      <i class="ti ti-clock">
+      </i>
+      Timer
+     </span>
+     <span class="nav-item">
+      <i class="ti ti-music">
+      </i>
+      Music
+     </span>
+     <span class="nav-item">
+      <i class="ti ti-leaf">
+      </i>
+      Nature
+     </span>
+     <button class="nav-action" id="statsBtn">
+      <i class="ti ti-chart-bar">
+      </i>
+      Stats
+     </button>
+     <span class="nav-item">
+      <i class="ti ti-history">
+      </i>
+      History
+     </span>
+    </div>
+    <div class="top-actions">
+     <button class="round" id="focusBtn">
+      <i class="ti ti-maximize">
+      </i>
+     </button>
+    </div>
+   </div>
+   <main class="hero">
+    <div class="greeting">
+     Good evening 🌙
+    </div>
+    <div class="time" id="time">
+     45:00
+    </div>
+    <button class="start" id="start">
+     <i class="ti ti-player-play" id="startIcon">
+     </i>
+     <span id="startText">
+      Start Focus
+     </span>
+    </button>
+    <div class="pomo-wrap">
+     <button class="pomo" id="pomoBtn">
+      <i class="ti ti-clock">
+      </i>
+      <span id="pomoLabel">
+       Pomodoro
+      </span>
+      ⌄
+     </button>
+     <div class="pomo-menu" id="pomoMenu">
+      <label class="pomo-opt">
+       Enable Pomodoro
+       <input id="pomoToggle" type="checkbox"/>
+      </label>
+      <div class="pomo-opt">
+       <span>
+        Short break
+       </span>
+       <span>
+        5 min
+       </span>
+      </div>
+      <div class="pomo-opt">
+       <span>
+        Long break
+       </span>
+       <span>
+        15 min
+       </span>
+      </div>
+      <div class="pomo-opt">
+       <span>
+        Cycle
+       </span>
+       <span id="cycleLabel">
+        1 of 4
+       </span>
+      </div>
+     </div>
+    </div>
+   </main>
+   <section class="panel">
+    <div class="section">
+     <div class="label">
+      Focus Duration
+     </div>
+     <div class="durations">
+      <button class="dur" data-m="25">
+       25
+       <small>
+        min
+       </small>
+      </button>
+      <button class="dur on" data-m="45">
+       45
+       <small>
+        min
+       </small>
+      </button>
+      <button class="dur" data-m="60">
+       60
+       <small>
+        min
+       </small>
+      </button>
+      <button class="dur" data-m="90">
+       90
+       <small>
+        min
+       </small>
+      </button>
+     </div>
+     <div class="breaks">
+      <div>
+       Short Break
+       <span>
+        5 min
+       </span>
+      </div>
+      <div>
+       Long Break
+       <span>
+        15 min
+       </span>
+      </div>
+     </div>
+    </div>
+    <div class="section">
+     <div class="label">
+      Scene
+     </div>
+     <div class="scenes">
+      <button class="scene-btn" data-scene="night">
+       <div class="thumb tn">
+       </div>
+       <span>
+        Night
+       </span>
+      </button>
+      <button class="scene-btn on" data-scene="sunset">
+       <div class="thumb ts">
+       </div>
+       <span>
+        Sunset
+       </span>
+      </button>
+      <button class="scene-btn" data-scene="forest">
+       <div class="thumb tf">
+       </div>
+       <span>
+        Forest
+       </span>
+      </button>
+      <button class="scene-btn" data-scene="aurora">
+       <div class="thumb ta">
+       </div>
+       <span>
+        Aurora
+       </span>
+      </button>
+     </div>
+    </div>
+    <div class="section">
+     <div class="label">
+      Now Playing
+     </div>
+     <div class="np-title" id="npTitle">
+      Lo-fi Chillhop
+     </div>
+     <div class="np-sub">
+      SomaFM
+     </div>
+     <div class="eq" id="eq">
+     </div>
+     <div class="player">
+      <button class="pp" id="musicToggle">
+       <i class="ti ti-player-play" id="musicIcon">
+       </i>
+      </button>
+     </div>
+     <div class="vol">
+      <i class="ti ti-volume">
+      </i>
+      <input id="vol" max="100" min="0" type="range" value="40"/>
+     </div>
+    </div>
+    <div class="section">
+     <div class="label">
+      Music Source
+     </div>
+     <div aria-label="Music sources" class="music-source-tabs">
+      <span class="music-tab source-label on" data-pane="radioPane">
+       SomaFM
+      </span>
+      <span class="music-tab source-label" data-pane="youtubePane">
+       YouTube
+      </span>
+      <button class="music-tab upload-tab" data-pane="uploadPane" type="button">
+       Upload
+      </button>
+     </div>
+     <div class="music-pane on" id="radioPane">
+      <div class="radio-row">
+       <select aria-label="SomaFM station" id="stationSelect">
+        <option value="https://ice1.somafm.com/groovesalad-128-mp3">
+         Groove Salad — ambient / downtempo
+        </option>
+        <option value="https://ice1.somafm.com/dronezone-128-mp3">
+         Drone Zone — atmospheric ambient
+        </option>
+        <option value="https://ice1.somafm.com/deepspaceone-128-mp3">
+         Deep Space One — deep ambient
+        </option>
+        <option value="https://ice1.somafm.com/spacestation-128-mp3">
+         Space Station — ambient downtempo
+        </option>
+        <option value="https://ice1.somafm.com/lush-128-mp3">
+         Lush — mellow vocals
+        </option>
+        <option value="https://ice1.somafm.com/fluid-128-mp3">
+         Fluid — chilled hip-hop
+        </option>
+        <option value="https://ice1.somafm.com/beatblender-128-mp3">
+         Beat Blender — deep house
+        </option>
+        <option value="https://ice1.somafm.com/secretagent-128-mp3">
+         Secret Agent — spy-jazz lounge
+        </option>
+        <option value="https://ice1.somafm.com/folkfwd-128-mp3">
+         Folk Forward — indie / alt-folk
+        </option>
+       </select>
+       <button aria-label="Play or pause radio" class="mini-play" id="radioToggle">
+        <i class="ti ti-player-play" id="radioIcon">
+        </i>
+       </button>
+      </div>
+     </div>
+     <div class="music-pane" id="youtubePane">
+      <div class="ytrow">
+       <input id="ytInput" placeholder="YouTube video / playlist"/>
+       <button id="ytToggle">
+        <i class="ti ti-player-play" id="ytIcon">
+        </i>
+       </button>
+      </div>
+     </div>
+     <div class="music-pane" id="uploadPane">
+      <button class="compact-upload" id="uploadBtn">
+       <i class="ti ti-upload">
+       </i>
+       Choose audio file
+      </button>
+      <input accept="audio/*" hidden="" id="upload" type="file"/>
+     </div>
+    </div>
+   </section>
+   <div class="footer">
+    <span class="k">
+     Space
+    </span>
+    Start / Pause
+    <span class="k">
+     R
+    </span>
+    Reset
+    <span class="k">
+     F
+    </span>
+    Focus Mode
+    <span class="k">
+     1–4
+    </span>
+    Change Scene
+   </div>
+  </div>
+  <div class="modal-bg" id="statsModal">
+   <div class="modal">
+    <div class="modal-head">
+     <h2>
+      Focus stats
+     </h2>
+     <button class="round" id="closeStats">
+      <i class="ti ti-x">
+      </i>
+     </button>
+    </div>
+    <div class="stat-grid">
+     <div class="stat-card">
+      <div class="stat-val" id="sStreak">
+       0
+      </div>
+      <div class="stat-lbl">
+       Day streak
+      </div>
+     </div>
+     <div class="stat-card">
+      <div class="stat-val" id="sSessions">
+       0
+      </div>
+      <div class="stat-lbl">
+       Sessions
+      </div>
+     </div>
+     <div class="stat-card">
+      <div class="stat-val" id="sHours">
+       0h
+      </div>
+      <div class="stat-lbl">
+       Total time
+      </div>
+     </div>
+    </div>
+    <div class="chart-wrap">
+     <div class="chart-title">
+      Last 7 days (minutes)
+     </div>
+     <div class="chart" id="chart">
+     </div>
+     <div class="bar-labels" id="barLabels">
+     </div>
+    </div>
+    <div class="stat-grid">
+     <div class="stat-card">
+      <div class="stat-val" id="sToday">
+       0m
+      </div>
+      <div class="stat-lbl">
+       Today
+      </div>
+     </div>
+     <div class="stat-card">
+      <div class="stat-val" id="sWeek">
+       0h
+      </div>
+      <div class="stat-lbl">
+       This week
+      </div>
+     </div>
+     <div class="stat-card">
+      <div class="stat-val" id="sBest">
+       0m
+      </div>
+      <div class="stat-lbl">
+       Longest
+      </div>
+     </div>
+    </div>
+    <button class="clear-btn" id="clearHistory">
+     Clear all history
+    </button>
+   </div>
+  </div>
+  <audio id="audio">
+  </audio>
+  <div id="yt-player" style="position:fixed;width:220px;height:124px;right:16px;bottom:16px;opacity:.001;pointer-events:none">
+  </div>
+  <script>
+   const BREAK_MINS=5,LONG_BREAK_MINS=15,MAX_CYCLES=4;
 let mins=45,total=mins*60,rem=total,running=false,timer=null,startAt=0,startRem=0;
 let mode='focus',pomoOn=localStorage.getItem('focus-pomo')==='1',cycle=1;
 const time=document.getElementById('time'),start=document.getElementById('start'),startIcon=document.getElementById('startIcon'),startText=document.getElementById('startText');
@@ -240,18 +715,92 @@ document.getElementById('focusBtn').onclick=toggleFocus;document.addEventListene
 /* Equalizer */
 for(let i=0;i<24;i++){let e=document.createElement('i');e.style.animationDuration=(.45+Math.random()*.8)+'s';document.getElementById('eq').appendChild(e)}
 
-/* Audio / all original SomaFM stations */
-const audio=document.getElementById('audio'),vol=document.getElementById('vol'),musicIcon=document.getElementById('musicIcon');const savedVol=localStorage.getItem('focus-vol');if(savedVol)vol.value=savedVol;audio.volume=vol.value/100;
-document.querySelectorAll('.station').forEach(s=>s.onclick=()=>{stopAll();document.querySelectorAll('.station').forEach(x=>x.classList.remove('on'));s.classList.add('on');audio.src=s.dataset.url;audio.loop=false;audio.play().then(()=>{musicIcon.className='ti ti-player-pause';document.getElementById('npTitle').textContent=s.dataset.name}).catch(()=>{});currentSource='radio'});
-document.getElementById('musicToggle').onclick=()=>{if(currentSource==='yt'){toggleYT();return}if(!audio.src){document.querySelector('.station').click();return}if(audio.paused){audio.play();musicIcon.className='ti ti-player-pause'}else{audio.pause();musicIcon.className='ti ti-player-play'}};
+/* Unified Music: SomaFM / YouTube / Upload */
+const audio=document.getElementById('audio'),vol=document.getElementById('vol'),musicIcon=document.getElementById('musicIcon');
+const stationSelect=document.getElementById('stationSelect'),radioToggle=document.getElementById('radioToggle'),radioIcon=document.getElementById('radioIcon');
+const savedVol=localStorage.getItem('focus-vol');if(savedVol)vol.value=savedVol;audio.volume=vol.value/100;
+let currentSource=null;
+
+function stationName(){
+  return stationSelect.options[stationSelect.selectedIndex].text.split(' — ')[0];
+}
+function playSelectedStation(){
+  stopAll();
+  audio.src=stationSelect.value;audio.loop=false;currentSource='radio';
+  audio.play().then(()=>{
+    radioIcon.className='ti ti-player-pause';musicIcon.className='ti ti-player-pause';
+    document.getElementById('npTitle').textContent=stationName();
+    localStorage.setItem('focus-station',stationSelect.value);
+  }).catch(()=>{});
+}
+const savedStation=localStorage.getItem('focus-station');
+if(savedStation && [...stationSelect.options].some(o=>o.value===savedStation))stationSelect.value=savedStation;
+stationSelect.onchange=playSelectedStation;
+radioToggle.onclick=()=>{
+  if(currentSource!=='radio'||!audio.src){playSelectedStation();return}
+  if(audio.paused){audio.play();radioIcon.className='ti ti-player-pause';musicIcon.className='ti ti-player-pause'}
+  else{audio.pause();radioIcon.className='ti ti-player-play';musicIcon.className='ti ti-player-play'}
+};
+document.getElementById('musicToggle').onclick=()=>{
+  if(currentSource==='yt'){toggleYT();return}
+  if(currentSource==='radio'){radioToggle.click();return}
+  if(currentSource==='mp3'){
+    if(audio.paused){audio.play();musicIcon.className='ti ti-player-pause'}
+    else{audio.pause();musicIcon.className='ti ti-player-play'};return
+  }
+  playSelectedStation();
+};
 vol.oninput=()=>{audio.volume=vol.value/100;if(ytPlayer&&ytReady)ytPlayer.setVolume(+vol.value);localStorage.setItem('focus-vol',vol.value)}
-document.getElementById('uploadBtn').onclick=()=>document.getElementById('upload').click();document.getElementById('upload').onchange=e=>{let f=e.target.files[0];if(!f)return;stopAll();audio.src=URL.createObjectURL(f);audio.loop=true;audio.play();currentSource='mp3';document.getElementById('npTitle').textContent=f.name;musicIcon.className='ti ti-player-pause'};
+document.getElementById('uploadBtn').onclick=()=>document.getElementById('upload').click();
+document.getElementById('upload').onchange=e=>{let f=e.target.files[0];if(!f)return;stopAll();audio.src=URL.createObjectURL(f);audio.loop=true;audio.play();currentSource='mp3';document.getElementById('npTitle').textContent=f.name;musicIcon.className='ti ti-player-pause'};
+
+/* ============================================================
+   MUSIC SOURCE PANES
+   ============================================================ */
+
+/**
+ * Shows one music-source pane and updates the selected source label.
+ *
+ * SomaFM and YouTube are intentionally styled as quiet source labels rather
+ * than conventional buttons. They can still be selected, but the cursor stays
+ * normal so the interface does not imply that every label is a major action.
+ */
+function showMusicPane(paneId, sourceElement) {
+  const sourceElements = document.querySelectorAll(".music-tab");
+  const panes = document.querySelectorAll(".music-pane");
+
+  sourceElements.forEach((element) => {
+    element.classList.remove("on");
+  });
+
+  panes.forEach((pane) => {
+    pane.classList.remove("on");
+  });
+
+  sourceElement.classList.add("on");
+
+  const pane = document.getElementById(paneId);
+
+  if (pane) {
+    pane.classList.add("on");
+  }
+}
+
+document.querySelectorAll(".source-label").forEach((label) => {
+  label.addEventListener("click", () => {
+    showMusicPane(label.dataset.pane, label);
+  });
+});
+
+document.querySelector(".upload-tab").addEventListener("click", (event) => {
+  showMusicPane(event.currentTarget.dataset.pane, event.currentTarget);
+});
 
 /* YouTube: one button toggles play/pause */
 let ytPlayer=null,ytReady=false,ytPlaying=false,currentSource=null;
 function onYouTubeIframeAPIReady(){ytPlayer=new YT.Player('yt-player',{height:'124',width:'220',playerVars:{autoplay:0,controls:0},events:{onReady:()=>{ytReady=true;ytPlayer.setVolume(+vol.value)},onStateChange:e=>{ytPlaying=e.data===YT.PlayerState.PLAYING;document.getElementById('ytIcon').className=ytPlaying?'ti ti-player-pause':'ti ti-player-play'}}})}
 function ids(u){return{v:(u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)||[])[1],p:(u.match(/[?&]list=([\w-]+)/)||[])[1]}}
-function stopAll(){audio.pause();if(ytPlayer&&ytReady)try{ytPlayer.stopVideo()}catch(e){};ytPlaying=false;musicIcon.className='ti ti-player-play';document.getElementById('ytIcon').className='ti ti-player-play'}
+function stopAll(){audio.pause();if(ytPlayer&&ytReady)try{ytPlayer.stopVideo()}catch(e){};ytPlaying=false;musicIcon.className='ti ti-player-play';radioIcon.className='ti ti-player-play';document.getElementById('ytIcon').className='ti ti-player-play'}
 function toggleYT(){if(!ytReady)return;if(currentSource==='yt'&&ytPlayer.getVideoData()?.video_id){ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();return}const x=ids(document.getElementById('ytInput').value.trim());stopAll();if(x.p){ytPlayer.loadPlaylist({list:x.p,listType:'playlist',index:0});ytPlayer.setLoop(true);currentSource='yt';document.getElementById('npTitle').textContent='YouTube playlist'}else if(x.v){ytPlayer.loadVideoById(x.v);currentSource='yt';document.getElementById('npTitle').textContent='YouTube audio'}else alert('Please paste a valid YouTube video or playlist link.')}
 document.getElementById('ytToggle').onclick=toggleYT;
 
@@ -263,5 +812,6 @@ document.getElementById('statsBtn').onclick=()=>{computeStats();statsModal.class
 /* Keyboard shortcuts */
 document.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;if(e.key==='Escape'){if(statsModal.classList.contains('open'))statsModal.classList.remove('open');else if(document.body.classList.contains('focus'))exitFocus();return}if(e.key===' '){e.preventDefault();running?pause():play()}else if(e.key.toLowerCase()==='r')reset();else if(e.key.toLowerCase()==='f')toggleFocus();else if(e.key.toLowerCase()==='s'){computeStats();statsModal.classList.add('open')}else if('1234'.includes(e.key))document.querySelectorAll('.scene-btn')[+e.key-1]?.click()});
 render();
-</script>
-</body></html>
+  </script>
+ </body>
+</html>
