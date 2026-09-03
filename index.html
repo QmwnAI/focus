@@ -50,89 +50,7 @@
     transition: background 0.6s ease, color 0.6s ease;
   }
 
-  .app { width: 100%; max-width: 560px; position: relative; z-index: 5; }
-
-  /* Full-screen scenic background */
-  .stage {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    border-radius: 0 !important;
-    z-index: -1 !important;
-  }
-
-  /* Dark veil keeps the UI readable over the scene */
-  .stage .scene-shade {
-    position:absolute; inset:0; z-index:1; pointer-events:none;
-    background:linear-gradient(to bottom,rgba(2,5,12,.12),rgba(2,5,12,.28));
-  }
-
-  /* Horizon / landscape silhouettes inspired by immersive focus screens */
-  .landscape {
-    position:absolute; left:-5%; right:-5%; bottom:-2%; height:42%;
-    z-index:1; pointer-events:none; opacity:.92;
-  }
-  .mountain-back,.mountain-front {
-    position:absolute; left:0; right:0; bottom:0; height:100%;
-    transform-origin:bottom;
-  }
-  .mountain-back {
-    opacity:.55;
-    background:linear-gradient(145deg,transparent 0 18%,rgba(10,15,35,.75) 18.3% 28%,transparent 28.3% 34%,rgba(12,18,38,.8) 34.3% 48%,transparent 48.3% 54%,rgba(8,14,31,.75) 54.3% 70%,transparent 70.3%);
-    animation:horizonDrift 28s ease-in-out infinite alternate;
-  }
-  .mountain-front {
-    bottom:-12%;
-    background:linear-gradient(155deg,transparent 0 12%,rgba(3,8,18,.96) 12.3% 30%,transparent 30.3% 38%,rgba(4,10,20,.98) 38.3% 61%,transparent 61.3% 69%,rgba(2,7,15,.98) 69.3%);
-    transform:scaleY(.82);
-  }
-  @keyframes horizonDrift { to { transform:translateX(2.5%) scaleY(1.04); } }
-
-  /* Aurora ribbons */
-  .aurora-ribbon {
-    position:absolute; width:72vw; height:28vh; left:12vw; top:5vh;
-    border-radius:50%; filter:blur(28px); opacity:0; z-index:1;
-    transform:rotate(-8deg); pointer-events:none;
-  }
-  .scene-aurora .aurora-ribbon {
-    opacity:.5;
-    background:linear-gradient(90deg,transparent,rgba(72,255,190,.62),rgba(95,190,255,.35),rgba(181,90,255,.48),transparent);
-    animation:ribbonWave 9s ease-in-out infinite alternate;
-  }
-  @keyframes ribbonWave {
-    from { transform:translateX(-8%) rotate(-10deg) scaleY(.65); }
-    to { transform:translateX(8%) rotate(4deg) scaleY(1.2); }
-  }
-
-  /* Forest silhouettes */
-  .tree-line {display:none;position:absolute;left:0;right:0;bottom:0;height:58%;z-index:1;pointer-events:none;opacity:.72}
-  .scene-forest .tree-line {display:block;background:
-    repeating-linear-gradient(87deg,transparent 0 5.5%,rgba(2,18,10,.92) 5.7% 6.2%,transparent 6.4% 10%),
-    linear-gradient(to top,rgba(1,13,7,.96),transparent 78%);}
-  .scene-forest .landscape {opacity:.45}
-
-  /* Sunset glowing sun */
-  .scene-sun {display:none;position:absolute;width:18vh;height:18vh;left:50%;top:19%;transform:translateX(-50%);border-radius:50%;z-index:1;pointer-events:none}
-  .scene-sunset .scene-sun {display:block;background:rgba(255,211,140,.88);box-shadow:0 0 70px rgba(255,130,80,.58);animation:sunPulse 7s ease-in-out infinite}
-  @keyframes sunPulse{50%{box-shadow:0 0 110px rgba(255,130,80,.75);transform:translateX(-50%) scale(1.035)}}
-
-  /* UI becomes floating glass over the scene */
-  .goal-input,.panel {
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-  }
-  .panel { background:rgba(5,8,18,.48); }
-  body.day .panel { background:rgba(255,255,255,.56); }
-
-  /* In normal mode, center the timer in the viewport behind the UI panel only when focus mode is active.
-     Otherwise keep the controls card layout readable. */
-  body:not(.focus-mode) .stage .center { display:none; }
-
-  body.focus-mode .stage { z-index:10 !important; }
-  body.focus-mode .stage .center { display:flex; }
-
+  .app { width: 100%; max-width: 560px; }
 
   .top-bar {
     display: flex;
@@ -180,8 +98,7 @@
   .stage {
     position: relative;
     width: 100%;
-    height: min(68vh, 620px);
-    min-height: 460px;
+    height: 420px;
     border-radius: 16px;
     overflow: hidden;
     transition: background 0.6s ease;
@@ -537,35 +454,102 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     letter-spacing: 0.3px;
   }
   .kbd { display: inline-block; padding: 1px 6px; border-radius: 3px; border: 0.5px solid var(--btn-border); background: var(--btn-bg); font-family: 'SF Mono', monospace; font-size: 10px; margin: 0 2px; }
-
-  .stage::before,.stage::after{content:'';position:absolute;inset:-25%;pointer-events:none;z-index:0}
-  .stage::before{background:radial-gradient(circle,rgba(255,255,255,.35) 0 1px,transparent 1.6px);background-size:110px 110px;animation:skyDrift 38s linear infinite;opacity:.35}
-  .stage::after{filter:blur(45px);opacity:.55;animation:atmo 15s ease-in-out infinite alternate}
-  .scene-night .stage::after{background:conic-gradient(from 210deg,transparent,rgba(93,110,255,.3),transparent 38%,rgba(208,91,255,.2),transparent 72%)}
-  .scene-sunset .stage::after{background:linear-gradient(120deg,transparent 12%,rgba(255,101,91,.3),rgba(255,190,91,.25),transparent 82%)}
-  .scene-forest .stage::after{background:radial-gradient(ellipse at 20% 80%,rgba(68,255,157,.28),transparent 45%),radial-gradient(ellipse at 80% 20%,rgba(166,255,96,.2),transparent 42%)}
-  .scene-aurora .stage::after{background:linear-gradient(115deg,transparent 12%,rgba(74,255,214,.32) 28%,transparent 46%,rgba(173,94,255,.34) 62%,transparent 82%);animation:auroraFlow 10s ease-in-out infinite alternate}
-  @keyframes skyDrift{to{transform:translate(9%,-7%) rotate(2deg)}} @keyframes atmo{to{transform:translate(5%,4%) scale(1.15)}} @keyframes auroraFlow{from{transform:translateX(-8%) skewY(-8deg)}to{transform:translateX(8%) skewY(5deg) scaleY(1.25)}}
-  body.focus-mode{padding:0;overflow:hidden} body.focus-mode .app{max-width:none;height:100vh}
-  body.focus-mode .panel,body.focus-mode .kbd-hint,body.focus-mode .top-bar,body.focus-mode .controls{opacity:0;pointer-events:none}
-  body.focus-mode .stage{position:fixed;inset:0;width:100vw;height:100vh;min-height:100vh;border-radius:0;z-index:10}
-  body.focus-mode .center{z-index:12}
-  body.focus-mode .goal-input{position:fixed;z-index:20;left:50%;bottom:9vh;transform:translateX(-50%);width:min(560px,80vw);background:transparent;border-color:transparent;color:var(--text)}
-  .focus-exit{display:none;position:fixed;top:22px;right:22px;z-index:40} body.focus-mode .focus-exit{display:flex}
-  body.focus-mode.controls-awake .controls{opacity:1;pointer-events:auto;position:fixed;z-index:30;bottom:3vh;left:50%;transform:translateX(-50%)}
-
-  body.focus-mode #compact-time { display:none; }
-  @media (max-width:700px){
-    .app{max-width:92vw}
-    .panel{max-height:48vh;overflow:auto}
-  }
 </style>
+
+<style id="cinematic-redesign">
+:root{
+  --cin-glass:rgba(7,11,24,.62);
+  --cin-border:rgba(255,255,255,.14);
+  --cin-accent:#a98cff;
+}
+html,body{width:100%;min-height:100%;margin:0}
+body{padding:0!important;display:block!important;overflow-x:hidden;background:#071020!important}
+.app{position:relative;z-index:10;width:100%!important;max-width:none!important;min-height:100vh;padding:20px 28px 18px}
+
+/* full-screen scene */
+.stage{
+  position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
+  border-radius:0!important;z-index:-2!important;overflow:hidden!important;
+}
+.stage:before,.stage:after{content:"";position:absolute;inset:-15%;pointer-events:none}
+.stage:before{
+  z-index:0;opacity:.48;
+  background-image:radial-gradient(circle,rgba(255,255,255,.9) 0 1px,transparent 1.4px);
+  background-size:91px 91px;animation:cinStars 75s linear infinite
+}
+.stage:after{z-index:0;filter:blur(60px);opacity:.45;animation:cinGlow 16s ease-in-out infinite alternate}
+.scene-night .stage:after{background:radial-gradient(ellipse at 50% 15%,rgba(78,103,255,.5),transparent 62%)}
+.scene-sunset .stage:after{background:radial-gradient(ellipse at 50% 45%,rgba(255,112,76,.75),rgba(255,170,88,.22) 35%,transparent 65%)}
+.scene-forest .stage:after{background:radial-gradient(ellipse at 50% 20%,rgba(72,200,130,.45),transparent 62%)}
+.scene-aurora .stage:after{background:radial-gradient(ellipse at 45% 15%,rgba(65,245,202,.42),rgba(161,86,255,.28) 45%,transparent 68%)}
+@keyframes cinStars{to{transform:translate3d(-55px,38px,0)}}
+@keyframes cinGlow{to{transform:translate3d(3vw,2vh,0) scale(1.08)}}
+
+.cin-cloud{position:absolute;border-radius:50%;filter:blur(25px);background:rgba(255,190,205,.11);z-index:0;pointer-events:none;animation:cinCloud 52s linear infinite}
+.cin-cloud.c1{width:42vw;height:9vh;top:18%;left:-25%}.cin-cloud.c2{width:34vw;height:7vh;top:30%;left:58%;animation-duration:67s}
+@keyframes cinCloud{to{transform:translateX(140vw)}}
+.cin-sun{position:absolute;width:12vh;height:12vh;left:50%;top:49%;transform:translate(-50%,-50%);border-radius:50%;z-index:0;opacity:0;background:#ffd39a;box-shadow:0 0 70px rgba(255,133,78,.65);transition:opacity 1s}
+.scene-sunset .cin-sun{opacity:.9}
+.cin-aurora{position:absolute;width:82vw;height:38vh;left:8vw;top:4vh;z-index:0;opacity:0;filter:blur(26px);background:linear-gradient(110deg,transparent 5%,rgba(70,244,196,.55) 25%,transparent 43%,rgba(98,194,255,.38) 56%,rgba(194,84,255,.48) 73%,transparent 92%);animation:cinAurora 12s ease-in-out infinite alternate}
+.scene-aurora .cin-aurora{opacity:.75}
+@keyframes cinAurora{from{transform:translateX(-4vw) skewY(-7deg) scaleY(.75)}to{transform:translateX(5vw) skewY(4deg) scaleY(1.15)}}
+.cin-mountains{position:absolute;left:-5%;right:-5%;bottom:25%;height:38%;z-index:0;animation:cinMount 24s ease-in-out infinite alternate}
+.cin-mountains:before,.cin-mountains:after{content:"";position:absolute;inset:0;clip-path:polygon(0 100%,0 76%,8% 51%,15% 73%,25% 36%,34% 70%,45% 48%,53% 73%,63% 39%,71% 69%,83% 30%,91% 62%,100% 44%,100% 100%)}
+.cin-mountains:before{background:#253956;opacity:.88}.cin-mountains:after{transform:translateY(14%) scaleY(.82);background:#10243a}
+@keyframes cinMount{to{transform:translateX(1.1vw) scale(1.012)}}
+.cin-trees{position:absolute;left:0;right:0;bottom:15%;height:44%;z-index:0;opacity:.92;background:repeating-linear-gradient(88deg,transparent 0 4.5%,#061827 4.7% 5.2%,transparent 5.4% 8.5%);clip-path:polygon(0 100%,0 55%,4% 72%,7% 32%,10% 70%,15% 40%,20% 78%,25% 28%,30% 72%,36% 45%,42% 80%,49% 52%,56% 75%,62% 38%,68% 77%,75% 34%,82% 74%,88% 28%,93% 65%,100% 44%,100% 100%);animation:cinTrees 20s ease-in-out infinite alternate}
+@keyframes cinTrees{to{transform:translateX(-.55vw)}}
+.cin-water{position:absolute;left:0;right:0;bottom:0;height:31%;z-index:0;background:linear-gradient(rgba(22,61,86,.82),#0a2639 55%,#071724);overflow:hidden}
+.cin-water:before{content:"";position:absolute;inset:-20%;background:repeating-linear-gradient(0deg,transparent 0 8px,rgba(255,190,140,.10) 9px 10px,transparent 11px 17px);transform:perspective(300px) rotateX(55deg);animation:cinWater 9s linear infinite}
+@keyframes cinWater{to{background-position:0 42px}}
+.scene-forest .cin-trees{height:61%;opacity:1;background:repeating-linear-gradient(89deg,transparent 0 3.7%,#03170f 3.9% 4.6%,transparent 4.8% 7%)}
+.scene-forest .cin-water{background:linear-gradient(rgba(20,73,57,.8),#092b25)}
+.scene-aurora .cin-water{background:linear-gradient(rgba(22,62,79,.8),#071c2c)}
+
+/* foreground UI */
+.top-bar{position:relative;z-index:20;margin:0 0 10px;gap:8px}
+.goal-input{display:none!important}
+.stage .center{position:fixed!important;inset:0!important;z-index:4!important;pointer-events:none}
+.stage .orb-wrap{pointer-events:auto}
+.stage .break-badge,.stage .cycle-info{z-index:5}
+.controls{position:relative;z-index:20;margin-top:0}
+.panel{
+  position:relative;z-index:20;width:min(1460px,calc(100vw - 56px));margin:18px auto 0!important;
+  background:var(--cin-glass)!important;border:1px solid var(--cin-border)!important;border-radius:18px!important;
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 60px rgba(0,0,0,.3)
+}
+.kbd-hint{position:relative;z-index:20}
+.icon-btn,.ctl,.dur,.scene-btn,.stn,.yt-input{backdrop-filter:blur(12px)}
+.scene-btn{min-height:76px}
+.scenes{grid-template-columns:repeat(4,1fr)}
+.now-playing{background:rgba(255,255,255,.07)!important}
+body:not(.focus-mode) .app{display:flex;flex-direction:column;min-height:100vh}
+body:not(.focus-mode) .top-bar{margin-left:auto}
+body:not(.focus-mode) .controls{margin-top:auto;padding-top:54vh}
+body:not(.focus-mode) .panel{margin-top:14px!important}
+body:not(.focus-mode) .kbd-hint{margin-bottom:0}
+
+/* focus mode keeps original logic but becomes cinematic */
+body.focus-mode .stage{z-index:10!important}
+body.focus-mode .panel,body.focus-mode .kbd-hint{opacity:0!important;pointer-events:none!important}
+body.focus-mode .goal-input{display:none!important}
+body.focus-mode.controls-awake .controls{opacity:1!important;pointer-events:auto!important;position:fixed!important;left:50%;bottom:5vh;transform:translateX(-50%);z-index:30}
+body.focus-mode .top-bar{opacity:0!important;pointer-events:none!important}
+body.focus-mode .focus-exit{display:flex!important}
+@media(max-width:850px){
+ .app{padding:14px}.panel{width:calc(100vw - 28px);max-height:42vh;overflow:auto}
+ body:not(.focus-mode) .controls{padding-top:50vh}.scenes{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
 </head>
 <body class="scene-night">
 <div class="app">
-  <button class="icon-btn focus-exit" id="focus-exit" aria-label="Exit focus mode"><i class="ti ti-minimize" style="font-size:18px;"></i></button>
+  <button class="icon-btn focus-exit" id="focus-exit" aria-label="Exit focus mode" style="display:none;position:fixed;top:22px;right:22px;z-index:40;"><i class="ti ti-minimize" style="font-size:18px;"></i></button>
+  <div style="position:absolute;top:24px;left:30px;z-index:22;font-size:22px;font-weight:600;"><i class="ti ti-mountain" style="margin-right:8px;"></i>Focus</div>
   <div class="top-bar">
-    <button class="icon-btn" id="focus-mode-btn" aria-label="Focus mode"><i class="ti ti-maximize" style="font-size:18px;"></i></button>
+    <button class="icon-btn" id="focus-mode-btn" aria-label="Focus mode" title="Focus mode"><i class="ti ti-maximize" style="font-size:18px;"></i></button>
     <button class="icon-btn" id="stats-btn" aria-label="Stats">
       <i class="ti ti-chart-bar" style="font-size:18px;"></i>
     </button>
@@ -574,18 +558,21 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     </button>
   </div>
 
-  <input type="text" class="goal-input" id="goal" placeholder="What are you focusing on?" maxlength="80">
+  <input type="hidden" class="goal-input" id="goal" value="">
 
   <div class="stage" id="stage">
     <div class="blob b1"></div>
     <div class="blob b2"></div>
     <div class="blob b3"></div>
     <div class="particles" id="particles"></div>
-    <div class="aurora-ribbon"></div>
-    <div class="scene-sun"></div>
-    <div class="landscape"><div class="mountain-back"></div><div class="mountain-front"></div></div>
-    <div class="tree-line"></div>
-    <div class="scene-shade"></div>
+    <div class="cin-cloud c1"></div>
+    <div class="cin-cloud c2"></div>
+    <div class="cin-sun"></div>
+    <div class="cin-aurora"></div>
+    <div class="cin-mountains"></div>
+    <div class="cin-trees"></div>
+    <div class="cin-water"></div>
+
 
     <div class="break-badge">Break</div>
     <div class="cycle-info" id="cycle-info">Cycle 1 of 4</div>
@@ -604,10 +591,6 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         </div>
       </div>
     </div>
-  </div>
-
-  <div style="text-align:center;margin:18px 0 4px;position:relative;z-index:6;">
-    <div id="compact-time" style="font-family:'SF Mono','Monaco','Menlo',monospace;font-size:54px;font-weight:300;letter-spacing:-2px;text-shadow:0 2px 24px rgba(0,0,0,.45)">25:00</div>
   </div>
 
   <div class="controls">
@@ -660,9 +643,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
 
         <div class="yt-row">
           <input type="text" id="yt-input" class="yt-input" placeholder="Paste a YouTube video or playlist link…">
-          <button class="ctl" id="yt-toggle-btn" aria-label="Play or pause YouTube">
-            <i class="ti ti-player-play" id="yt-toggle-icon" style="font-size:16px;"></i>
-          </button>
+          <button class="ctl" id="yt-toggle-btn" aria-label="Play or pause YouTube"><i class="ti ti-player-play" id="yt-toggle-icon" style="font-size:16px;"></i></button>
         </div>
       </div>
 
@@ -739,8 +720,6 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
   // ===================== DOM =====================
   const ring = document.getElementById('ring');
   const disp = document.getElementById('disp');
-  const compactTime = document.getElementById('compact-time');
-  const setDisplays = value => { disp.textContent = value; if (compactTime) compactTime.textContent = value; };
   const pi = document.getElementById('pi');
   const stage = document.getElementById('stage');
   const cycleInfo = document.getElementById('cycle-info');
@@ -828,7 +807,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     if (mode === 'focus') {
       total = mins * 60;
       rem = total;
-      setDisplays(fmt(rem));
+      disp.textContent = fmt(rem);
       ring.style.strokeDashoffset = '0';
     }
   }
@@ -836,7 +815,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
   function tick() {
     const e = Math.floor((Date.now() - t0) / 1000);
     rem = Math.max(0, r0 - e);
-    setDisplays(fmt(rem));
+    disp.textContent = fmt(rem);
     ring.style.strokeDashoffset = ((total - rem) / total) * CIRC;
     updateTitle();
     if (rem === 0) finish();
@@ -860,7 +839,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     stage.classList.remove('mode-break');
     total = focusMins * 60;
     rem = total;
-    setDisplays(fmt(rem));
+    disp.textContent = fmt(rem);
     pi.className = 'ti ti-player-play';
     ring.style.strokeDashoffset = '0';
     cycle = 1;
@@ -894,7 +873,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         stage.classList.add('mode-break');
         total = BREAK_MINS * 60;
         rem = total;
-        setDisplays(fmt(rem));
+        disp.textContent = fmt(rem);
         ring.style.strokeDashoffset = '0';
         // auto-start break
         setTimeout(() => startTimer(), 800);
@@ -905,13 +884,13 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         cycleInfo.textContent = `Cycle ${cycle} of ${MAX_CYCLES}`;
         total = focusMins * 60;
         rem = total;
-        setDisplays(fmt(rem));
+        disp.textContent = fmt(rem);
         ring.style.strokeDashoffset = '0';
         setTimeout(() => startTimer(), 800);
       }
     } else {
       rem = 0;
-      setDisplays(fmt(0));
+      disp.textContent = fmt(0);
       pi.className = 'ti ti-player-play';
       ring.style.strokeDashoffset = CIRC;
       stopStation();
@@ -926,7 +905,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
       recordSession('focus', elapsed, false);
     }
     clearInterval(iv); running = false;
-    rem = 0; setDisplays(fmt(0));
+    rem = 0; disp.textContent = fmt(0);
     pi.className = 'ti ti-player-play';
     ring.style.strokeDashoffset = CIRC;
     stopStation();
@@ -1160,22 +1139,43 @@ function toggleStation(s, btn) {
   ytToggleBtn.onclick = () => {
     const url = document.getElementById('yt-input').value.trim();
     if (currentStation === 'yt' && ytPlayer && ytReady) {
-      if (ytIsPlaying) { ytPlayer.pauseVideo(); ytIsPlaying=false; ytToggleIcon.className='ti ti-player-play'; }
-      else { ytPlayer.playVideo(); ytIsPlaying=true; ytToggleIcon.className='ti ti-player-pause'; }
+      if (ytIsPlaying) {
+        ytPlayer.pauseVideo(); ytIsPlaying = false;
+        ytToggleIcon.className = 'ti ti-player-play';
+      } else {
+        ytPlayer.playVideo(); ytIsPlaying = true;
+        ytToggleIcon.className = 'ti ti-player-pause';
+      }
       return;
     }
-    const playlistId=extractYouTubePlaylistId(url), videoId=extractYouTubeId(url);
+    const playlistId = extractYouTubePlaylistId(url);
+    const videoId = extractYouTubeId(url);
     if (playlistId) playYouTubePlaylist(playlistId);
     else if (videoId) playYouTube(videoId);
     else alert('Please paste a valid YouTube video or playlist link.');
   };
 
-  const focusModeBtn=document.getElementById('focus-mode-btn'), focusExit=document.getElementById('focus-exit');
-  let focusHideTimer=null;
-  function enterFocusMode(){document.body.classList.add('focus-mode','controls-awake');clearTimeout(focusHideTimer);focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800)}
-  function exitFocusMode(){document.body.classList.remove('focus-mode','controls-awake');clearTimeout(focusHideTimer)}
-  focusModeBtn.onclick=enterFocusMode; focusExit.onclick=exitFocusMode;
-  document.addEventListener('mousemove',()=>{if(!document.body.classList.contains('focus-mode'))return;document.body.classList.add('controls-awake');clearTimeout(focusHideTimer);focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800)});
+  // ===================== Immersive focus mode =====================
+  const focusModeBtn = document.getElementById('focus-mode-btn');
+  const focusExit = document.getElementById('focus-exit');
+  let focusHideTimer = null;
+  function enterFocusMode(){
+    document.body.classList.add('focus-mode','controls-awake');
+    clearTimeout(focusHideTimer);
+    focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800);
+  }
+  function exitFocusMode(){
+    document.body.classList.remove('focus-mode','controls-awake');
+    clearTimeout(focusHideTimer);
+  }
+  focusModeBtn.onclick=enterFocusMode;
+  focusExit.onclick=exitFocusMode;
+  document.addEventListener('mousemove',()=>{
+    if(!document.body.classList.contains('focus-mode')) return;
+    document.body.classList.add('controls-awake');
+    clearTimeout(focusHideTimer);
+    focusHideTimer=setTimeout(()=>document.body.classList.remove('controls-awake'),1800);
+  });
 
 
   // ===================== Stats =====================
@@ -1255,7 +1255,8 @@ history.forEach(s => {
 
   // ===================== Keyboard shortcuts =====================
   document.addEventListener('keydown', e => {
-    if(e.key==='Escape'&&document.body.classList.contains('focus-mode')){exitFocusMode();return;}
+    if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) { exitFocusMode(); return; }
+    if (e.key.toLowerCase() === 'f' && document.activeElement !== goalInput) { enterFocusMode(); return; }
     if (document.activeElement === goalInput) return;
     if (statsModal.classList.contains('open')) {
       if (e.key === 'Escape') statsModal.classList.remove('open');
