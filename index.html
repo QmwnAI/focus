@@ -1,3 +1,28 @@
+<!--
+  Focus - Readable Full Build
+  ===========================
+
+  Interaction policy used in this build:
+  - Every control that performs an action remains clickable.
+  - Static labels are not clickable.
+  - SomaFM and YouTube are functional source tabs, but intentionally use the
+    normal arrow cursor instead of the hand cursor.
+  - YouTube input remains directly editable and supports Enter to play.
+  - Redundant Settings and track-skip controls have been removed.
+
+  Major systems:
+  - Focus timer
+  - Pomodoro cycles, short breaks, and long breaks
+  - Full-screen animated scenes
+  - SomaFM radio station selector
+  - YouTube video / playlist audio
+  - Local audio upload
+  - Volume control
+  - Session history and statistics
+  - Focus mode
+  - Keyboard shortcuts
+  - LocalStorage persistence
+-->
 <!DOCTYPE html>
 <html lang="en">
  <head>
@@ -188,85 +213,115 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
   .compact-upload{width:100%;padding:9px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;font-size:11px}
 }
   </style>
-  <style id="interaction-cleanup">
-   /*
-  Interaction rules:
-  - Buttons only look clickable when they actually perform an action.
-  - Static navigation/source labels use a normal cursor.
-  - SomaFM and YouTube source labels remain visually polished without pretending
-    to be buttons.
-*/
-.nav-item,
-.source-label {
+  <style id="interaction-fix">
+   /* Static top labels: clearly non-interactive. */
+.nav-label {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  color: var(--dim);
-  user-select: none;
-  cursor: default;
-}
-
-.nav-item {
   padding: 9px 15px;
   border-radius: 22px;
+  color: var(--dim);
+  cursor: default;
+  user-select: none;
 }
 
-.nav-item.active {
-  background: rgba(255, 255, 255, 0.12);
+.nav-current {
   color: #ffffff;
+  background: rgba(255,255,255,.12);
 }
 
-.nav-action {
+/* Stats is a real action. */
+.nav-clickable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   padding: 9px 15px;
   border-radius: 22px;
-  background: transparent;
   color: var(--dim);
+  background: transparent;
   cursor: pointer;
+  transition: background .18s ease, color .18s ease;
 }
 
-.nav-action:hover {
-  background: rgba(255, 255, 255, 0.10);
+.nav-clickable:hover,
+.nav-clickable:focus-visible {
   color: #ffffff;
+  background: rgba(255,255,255,.10);
 }
 
-.source-label {
-  min-height: 30px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid transparent;
-  font-size: 10px;
-  transition:
-    background 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease;
-}
-
-.source-label.on {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Upload is an actual action, so it retains an intentional pointer state. */
-.upload-tab {
-  cursor: pointer !important;
-}
-
-.upload-tab:hover {
-  background: rgba(255, 255, 255, 0.13);
-  color: #ffffff;
-}
-
-/* Main music player now contains only the functional play/pause control. */
-.player {
-  min-height: 50px;
-}
-
-/* Prevent generic rules from giving static source labels a hand cursor. */
-.music-source-tabs .source-label {
+/*
+  SomaFM and YouTube ARE clickable tabs.
+  The user requested that they do not show the hand cursor, so only their
+  cursor appearance is changed. Pointer events remain fully enabled.
+*/
+.music-tab.no-hand {
   cursor: default !important;
+}
+
+.music-tab {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 3;
+}
+
+.music-tab:hover,
+.music-tab:focus-visible {
+  background: rgba(255,255,255,.12);
+  color: #ffffff;
+}
+
+.music-tab.on {
+  background: rgba(255,255,255,.15);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* Critical interactive controls must always sit above decorative layers. */
+.panel,
+.section,
+.music-source-tabs,
+.music-pane,
+.ytrow,
+#ytInput,
+#ytToggle,
+#stationSelect,
+#radioToggle,
+#uploadBtn,
+#upload,
+#musicToggle,
+#vol,
+.dur,
+.scene-btn,
+.pomo,
+.pomo-menu,
+#statsBtn,
+#focusBtn {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+#ytInput {
+  cursor: text !important;
+  user-select: text;
+}
+
+#stationSelect {
+  cursor: default;
+}
+
+#ytToggle,
+#radioToggle,
+#uploadBtn,
+#musicToggle,
+.dur,
+.scene-btn,
+.pomo,
+#statsBtn,
+#focusBtn {
+  cursor: pointer;
 }
   </style>
  </head>
@@ -298,28 +353,28 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
      </i>
      Focus
     </div>
-    <div aria-label="Application sections" class="nav">
-     <span class="nav-item active">
+    <div aria-label="Focus navigation" class="nav">
+     <span class="nav-label nav-current">
       <i class="ti ti-clock">
       </i>
       Timer
      </span>
-     <span class="nav-item">
+     <span class="nav-label">
       <i class="ti ti-music">
       </i>
       Music
      </span>
-     <span class="nav-item">
+     <span class="nav-label">
       <i class="ti ti-leaf">
       </i>
       Nature
      </span>
-     <button class="nav-action" id="statsBtn">
+     <button class="nav-clickable" id="statsBtn" type="button">
       <i class="ti ti-chart-bar">
       </i>
       Stats
      </button>
-     <span class="nav-item">
+     <span class="nav-label">
       <i class="ti ti-history">
       </i>
       History
@@ -496,14 +551,14 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
      <div class="label">
       Music Source
      </div>
-     <div aria-label="Music sources" class="music-source-tabs">
-      <span class="music-tab source-label on" data-pane="radioPane">
+     <div aria-label="Music source" class="music-source-tabs" role="tablist">
+      <button aria-selected="true" class="music-tab source-switch on no-hand" data-pane="radioPane" role="tab" type="button">
        SomaFM
-      </span>
-      <span class="music-tab source-label" data-pane="youtubePane">
+      </button>
+      <button aria-selected="false" class="music-tab source-switch no-hand" data-pane="youtubePane" role="tab" type="button">
        YouTube
-      </span>
-      <button class="music-tab upload-tab" data-pane="uploadPane" type="button">
+      </button>
+      <button aria-selected="false" class="music-tab source-switch" data-pane="uploadPane" role="tab" type="button">
        Upload
       </button>
      </div>
@@ -736,45 +791,45 @@ document.getElementById('uploadBtn').onclick=()=>document.getElementById('upload
 document.getElementById('upload').onchange=e=>{let f=e.target.files[0];if(!f)return;stopAll();audio.src=URL.createObjectURL(f);audio.loop=true;audio.play();currentSource='mp3';document.getElementById('npTitle').textContent=f.name;musicIcon.className='ti ti-player-pause'};
 
 /* ============================================================
-   MUSIC SOURCE PANES
+   MUSIC SOURCE TABS
    ============================================================ */
 
 /**
- * Shows one music-source pane and updates the selected source label.
+ * Switch between SomaFM, YouTube, and Upload controls.
  *
- * SomaFM and YouTube are intentionally styled as quiet source labels rather
- * than conventional buttons. They can still be selected, but the cursor stays
- * normal so the interface does not imply that every label is a major action.
+ * All three tabs are functional. SomaFM and YouTube intentionally keep the
+ * normal arrow cursor, but they remain fully clickable and keyboard accessible.
  */
-function showMusicPane(paneId, sourceElement) {
-  const sourceElements = document.querySelectorAll(".music-tab");
-  const panes = document.querySelectorAll(".music-pane");
+function activateMusicPane(tab) {
+  const paneId = tab.dataset.pane;
 
-  sourceElements.forEach((element) => {
-    element.classList.remove("on");
+  document.querySelectorAll(".source-switch").forEach((button) => {
+    const isActive = button === tab;
+
+    button.classList.toggle("on", isActive);
+    button.setAttribute("aria-selected", String(isActive));
   });
 
-  panes.forEach((pane) => {
-    pane.classList.remove("on");
+  document.querySelectorAll(".music-pane").forEach((pane) => {
+    pane.classList.toggle("on", pane.id === paneId);
   });
 
-  sourceElement.classList.add("on");
+  // Put the caret straight into the YouTube field when that source is chosen.
+  if (paneId === "youtubePane") {
+    requestAnimationFrame(() => {
+      const youtubeInput = document.getElementById("ytInput");
 
-  const pane = document.getElementById(paneId);
-
-  if (pane) {
-    pane.classList.add("on");
+      if (youtubeInput) {
+        youtubeInput.focus();
+      }
+    });
   }
 }
 
-document.querySelectorAll(".source-label").forEach((label) => {
-  label.addEventListener("click", () => {
-    showMusicPane(label.dataset.pane, label);
+document.querySelectorAll(".source-switch").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    activateMusicPane(tab);
   });
-});
-
-document.querySelector(".upload-tab").addEventListener("click", (event) => {
-  showMusicPane(event.currentTarget.dataset.pane, event.currentTarget);
 });
 
 /* YouTube: one button toggles play/pause */
@@ -784,6 +839,15 @@ function ids(u){return{v:(u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11}
 function stopAll(){audio.pause();if(ytPlayer&&ytReady)try{ytPlayer.stopVideo()}catch(e){};ytPlaying=false;musicIcon.className='ti ti-player-play';radioIcon.className='ti ti-player-play';document.getElementById('ytIcon').className='ti ti-player-play'}
 function toggleYT(){if(!ytReady)return;if(currentSource==='yt'&&ytPlayer.getVideoData()?.video_id){ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();return}const x=ids(document.getElementById('ytInput').value.trim());stopAll();if(x.p){ytPlayer.loadPlaylist({list:x.p,listType:'playlist',index:0});ytPlayer.setLoop(true);currentSource='yt';document.getElementById('npTitle').textContent='YouTube playlist'}else if(x.v){ytPlayer.loadVideoById(x.v);currentSource='yt';document.getElementById('npTitle').textContent='YouTube audio'}else alert('Please paste a valid YouTube video or playlist link.')}
 document.getElementById('ytToggle').onclick=toggleYT;
+
+
+/* Pressing Enter in the YouTube field performs the same action as the button. */
+document.getElementById("ytInput").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    toggleYT();
+  }
+});
 
 /* Original stats/history */
 const statsModal=document.getElementById('statsModal');
