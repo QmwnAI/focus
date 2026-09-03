@@ -50,7 +50,89 @@
     transition: background 0.6s ease, color 0.6s ease;
   }
 
-  .app { width: 100%; max-width: 560px; }
+  .app { width: 100%; max-width: 560px; position: relative; z-index: 5; }
+
+  /* Full-screen scenic background */
+  .stage {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    border-radius: 0 !important;
+    z-index: -1 !important;
+  }
+
+  /* Dark veil keeps the UI readable over the scene */
+  .stage .scene-shade {
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(to bottom,rgba(2,5,12,.12),rgba(2,5,12,.28));
+  }
+
+  /* Horizon / landscape silhouettes inspired by immersive focus screens */
+  .landscape {
+    position:absolute; left:-5%; right:-5%; bottom:-2%; height:42%;
+    z-index:1; pointer-events:none; opacity:.92;
+  }
+  .mountain-back,.mountain-front {
+    position:absolute; left:0; right:0; bottom:0; height:100%;
+    transform-origin:bottom;
+  }
+  .mountain-back {
+    opacity:.55;
+    background:linear-gradient(145deg,transparent 0 18%,rgba(10,15,35,.75) 18.3% 28%,transparent 28.3% 34%,rgba(12,18,38,.8) 34.3% 48%,transparent 48.3% 54%,rgba(8,14,31,.75) 54.3% 70%,transparent 70.3%);
+    animation:horizonDrift 28s ease-in-out infinite alternate;
+  }
+  .mountain-front {
+    bottom:-12%;
+    background:linear-gradient(155deg,transparent 0 12%,rgba(3,8,18,.96) 12.3% 30%,transparent 30.3% 38%,rgba(4,10,20,.98) 38.3% 61%,transparent 61.3% 69%,rgba(2,7,15,.98) 69.3%);
+    transform:scaleY(.82);
+  }
+  @keyframes horizonDrift { to { transform:translateX(2.5%) scaleY(1.04); } }
+
+  /* Aurora ribbons */
+  .aurora-ribbon {
+    position:absolute; width:72vw; height:28vh; left:12vw; top:5vh;
+    border-radius:50%; filter:blur(28px); opacity:0; z-index:1;
+    transform:rotate(-8deg); pointer-events:none;
+  }
+  .scene-aurora .aurora-ribbon {
+    opacity:.5;
+    background:linear-gradient(90deg,transparent,rgba(72,255,190,.62),rgba(95,190,255,.35),rgba(181,90,255,.48),transparent);
+    animation:ribbonWave 9s ease-in-out infinite alternate;
+  }
+  @keyframes ribbonWave {
+    from { transform:translateX(-8%) rotate(-10deg) scaleY(.65); }
+    to { transform:translateX(8%) rotate(4deg) scaleY(1.2); }
+  }
+
+  /* Forest silhouettes */
+  .tree-line {display:none;position:absolute;left:0;right:0;bottom:0;height:58%;z-index:1;pointer-events:none;opacity:.72}
+  .scene-forest .tree-line {display:block;background:
+    repeating-linear-gradient(87deg,transparent 0 5.5%,rgba(2,18,10,.92) 5.7% 6.2%,transparent 6.4% 10%),
+    linear-gradient(to top,rgba(1,13,7,.96),transparent 78%);}
+  .scene-forest .landscape {opacity:.45}
+
+  /* Sunset glowing sun */
+  .scene-sun {display:none;position:absolute;width:18vh;height:18vh;left:50%;top:19%;transform:translateX(-50%);border-radius:50%;z-index:1;pointer-events:none}
+  .scene-sunset .scene-sun {display:block;background:rgba(255,211,140,.88);box-shadow:0 0 70px rgba(255,130,80,.58);animation:sunPulse 7s ease-in-out infinite}
+  @keyframes sunPulse{50%{box-shadow:0 0 110px rgba(255,130,80,.75);transform:translateX(-50%) scale(1.035)}}
+
+  /* UI becomes floating glass over the scene */
+  .goal-input,.panel {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  .panel { background:rgba(5,8,18,.48); }
+  body.day .panel { background:rgba(255,255,255,.56); }
+
+  /* In normal mode, center the timer in the viewport behind the UI panel only when focus mode is active.
+     Otherwise keep the controls card layout readable. */
+  body:not(.focus-mode) .stage .center { display:none; }
+
+  body.focus-mode .stage { z-index:10 !important; }
+  body.focus-mode .stage .center { display:flex; }
+
 
   .top-bar {
     display: flex;
@@ -471,6 +553,12 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
   body.focus-mode .goal-input{position:fixed;z-index:20;left:50%;bottom:9vh;transform:translateX(-50%);width:min(560px,80vw);background:transparent;border-color:transparent;color:var(--text)}
   .focus-exit{display:none;position:fixed;top:22px;right:22px;z-index:40} body.focus-mode .focus-exit{display:flex}
   body.focus-mode.controls-awake .controls{opacity:1;pointer-events:auto;position:fixed;z-index:30;bottom:3vh;left:50%;transform:translateX(-50%)}
+
+  body.focus-mode #compact-time { display:none; }
+  @media (max-width:700px){
+    .app{max-width:92vw}
+    .panel{max-height:48vh;overflow:auto}
+  }
 </style>
 </head>
 <body class="scene-night">
@@ -493,6 +581,11 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     <div class="blob b2"></div>
     <div class="blob b3"></div>
     <div class="particles" id="particles"></div>
+    <div class="aurora-ribbon"></div>
+    <div class="scene-sun"></div>
+    <div class="landscape"><div class="mountain-back"></div><div class="mountain-front"></div></div>
+    <div class="tree-line"></div>
+    <div class="scene-shade"></div>
 
     <div class="break-badge">Break</div>
     <div class="cycle-info" id="cycle-info">Cycle 1 of 4</div>
@@ -511,6 +604,10 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         </div>
       </div>
     </div>
+  </div>
+
+  <div style="text-align:center;margin:18px 0 4px;position:relative;z-index:6;">
+    <div id="compact-time" style="font-family:'SF Mono','Monaco','Menlo',monospace;font-size:54px;font-weight:300;letter-spacing:-2px;text-shadow:0 2px 24px rgba(0,0,0,.45)">25:00</div>
   </div>
 
   <div class="controls">
@@ -642,6 +739,8 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
   // ===================== DOM =====================
   const ring = document.getElementById('ring');
   const disp = document.getElementById('disp');
+  const compactTime = document.getElementById('compact-time');
+  const setDisplays = value => { disp.textContent = value; if (compactTime) compactTime.textContent = value; };
   const pi = document.getElementById('pi');
   const stage = document.getElementById('stage');
   const cycleInfo = document.getElementById('cycle-info');
@@ -729,7 +828,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     if (mode === 'focus') {
       total = mins * 60;
       rem = total;
-      disp.textContent = fmt(rem);
+      setDisplays(fmt(rem));
       ring.style.strokeDashoffset = '0';
     }
   }
@@ -737,7 +836,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
   function tick() {
     const e = Math.floor((Date.now() - t0) / 1000);
     rem = Math.max(0, r0 - e);
-    disp.textContent = fmt(rem);
+    setDisplays(fmt(rem));
     ring.style.strokeDashoffset = ((total - rem) / total) * CIRC;
     updateTitle();
     if (rem === 0) finish();
@@ -761,7 +860,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
     stage.classList.remove('mode-break');
     total = focusMins * 60;
     rem = total;
-    disp.textContent = fmt(rem);
+    setDisplays(fmt(rem));
     pi.className = 'ti ti-player-play';
     ring.style.strokeDashoffset = '0';
     cycle = 1;
@@ -795,7 +894,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         stage.classList.add('mode-break');
         total = BREAK_MINS * 60;
         rem = total;
-        disp.textContent = fmt(rem);
+        setDisplays(fmt(rem));
         ring.style.strokeDashoffset = '0';
         // auto-start break
         setTimeout(() => startTimer(), 800);
@@ -806,13 +905,13 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
         cycleInfo.textContent = `Cycle ${cycle} of ${MAX_CYCLES}`;
         total = focusMins * 60;
         rem = total;
-        disp.textContent = fmt(rem);
+        setDisplays(fmt(rem));
         ring.style.strokeDashoffset = '0';
         setTimeout(() => startTimer(), 800);
       }
     } else {
       rem = 0;
-      disp.textContent = fmt(0);
+      setDisplays(fmt(0));
       pi.className = 'ti ti-player-play';
       ring.style.strokeDashoffset = CIRC;
       stopStation();
@@ -827,7 +926,7 @@ body.day.scene-night   .stage { background: radial-gradient(ellipse at 30% 20%, 
       recordSession('focus', elapsed, false);
     }
     clearInterval(iv); running = false;
-    rem = 0; disp.textContent = fmt(0);
+    rem = 0; setDisplays(fmt(0));
     pi.className = 'ti ti-player-play';
     ring.style.strokeDashoffset = CIRC;
     stopStation();
