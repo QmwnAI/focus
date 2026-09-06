@@ -527,10 +527,10 @@ body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:no
       Music Source
      </div>
      <div aria-label="Music source" class="music-source-tabs" role="tablist">
-      <button aria-selected="true" class="music-tab source-switch on no-hand" data-pane="radioPane" role="tab" type="button">
+      <button aria-selected="true" class="music-tab source-switch" data-pane="radioPane" role="tab" type="button">
        SomaFM
       </button>
-      <button aria-selected="false" class="music-tab source-switch no-hand" data-pane="youtubePane" role="tab" type="button">
+      <button aria-selected="false" class="music-tab source-switch" data-pane="youtubePane" role="tab" type="button">
        YouTube
       </button>
       <button aria-selected="false" class="music-tab source-switch" data-pane="uploadPane" role="tab" type="button">
@@ -808,7 +808,7 @@ document.querySelectorAll(".source-switch").forEach((tab) => {
 });
 
 /* YouTube: one button toggles play/pause */
-let ytPlayer=null,ytReady=false,ytPlaying=false,currentSource=null;
+let ytPlayer=null,ytReady=false,ytPlaying=false;
 function onYouTubeIframeAPIReady(){ytPlayer=new YT.Player('yt-player',{height:'124',width:'220',playerVars:{autoplay:0,controls:0},events:{onReady:()=>{ytReady=true;ytPlayer.setVolume(+vol.value)},onStateChange:e=>{ytPlaying=e.data===YT.PlayerState.PLAYING;document.getElementById('ytIcon').className=ytPlaying?'ti ti-player-pause':'ti ti-player-play'}}})}
 function ids(u){return{v:(u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)||[])[1],p:(u.match(/[?&]list=([\w-]+)/)||[])[1]}}
 function stopAll(){audio.pause();if(ytPlayer&&ytReady)try{ytPlayer.stopVideo()}catch(e){};ytPlaying=false;musicIcon.className='ti ti-player-play';radioIcon.className='ti ti-player-play';document.getElementById('ytIcon').className='ti ti-player-play'}
