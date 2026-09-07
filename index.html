@@ -88,15 +88,25 @@
   .ring-svg .progress{stroke:#fff;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 10px rgba(255,255,255,.55))}
   .time{position:relative;z-index:2;font-size:clamp(46px,8.5vh,80px);font-weight:300;letter-spacing:-3px}
 
+  .controls-row{display:flex;align-items:center;justify-content:center;gap:16px}
+  .ctl{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;flex-shrink:0}
+  .ctl:hover{background:rgba(255,255,255,.16)}
+  .ctl i{font-size:18px}
+
   .start{border:0;background:#fff;color:#101525;border-radius:16px;padding:14px 28px;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 10px 35px rgba(0,0,0,.2)}
   .start i{margin-right:9px}
 
   .pomo-wrap{position:relative}
   .pomo{border:1px solid var(--border);background:rgba(10,15,30,.45);color:#fff;padding:9px 16px;border-radius:22px;backdrop-filter:blur(14px);cursor:pointer}
-  .pomo-menu{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(8,12,25,.92);border:1px solid var(--border);border-radius:12px;padding:10px;display:none;min-width:210px;backdrop-filter:blur(20px);z-index:30}
+  .pomo-menu{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(8,12,25,.92);border:1px solid var(--border);border-radius:12px;padding:10px;display:none;min-width:230px;backdrop-filter:blur(20px);z-index:30}
   .pomo-menu.open{display:block}
-  .pomo-opt{display:flex;justify-content:space-between;padding:8px;font-size:13px;color:var(--dim)}
-  .pomo-opt input{accent-color:var(--accent)}
+  .pomo-opt{display:flex;justify-content:space-between;align-items:center;padding:8px;font-size:13px;color:var(--dim)}
+  .pomo-enable{cursor:pointer;user-select:none}
+
+  .pomo-switch{width:34px;height:20px;border-radius:12px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0}
+  .pomo-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+  .pomo-switch.on{background:var(--accent)}
+  .pomo-switch.on::after{transform:translateX(14px)}
 
   /* ============ PANEL ============ */
   .panel{display:grid;grid-template-columns:1.05fr 1.1fr .8fr 1fr;min-height:200px;height:200px;background:var(--glass);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(22px);overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.28)}
@@ -108,8 +118,10 @@
   .dur{flex:1;min-width:0;padding:12px 6px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.05);color:#fff;cursor:pointer}
   .dur.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
   .dur small{display:block;color:var(--muted);margin-top:3px}
-  .breaks{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);margin-top:14px;padding-top:12px;font-size:12px}
+  .breaks{border-top:1px solid rgba(255,255,255,.08);margin-top:14px;padding-top:12px;font-size:12px;display:flex;flex-direction:column;gap:6px}
+  .breaks div{display:flex;justify-content:space-between}
   .breaks span{color:var(--green)}
+  .breaks-note{color:var(--muted);font-size:11px;margin-top:2px}
 
   .scenes{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
   .scene-btn{height:110px;border:1px solid var(--border);border-radius:10px;position:relative;overflow:hidden;cursor:pointer;background:#15223d;color:#fff;padding:0}
@@ -156,9 +168,15 @@
   .k{padding:3px 7px;background:rgba(10,15,25,.55);border:1px solid var(--border);border-radius:5px;margin-left:12px;margin-right:4px}
 
   /* ============ FOCUS MODE ============ */
-  body.focus .top,body.focus .panel,body.focus .footer{opacity:0;pointer-events:none;transition:opacity .4s}
+  /* Panel/footer vanish instantly (no reflow), top bar becomes a floating
+     overlay so its opacity fade never causes a layout jump. */
+  body.focus .panel,body.focus .footer{display:none}
+  body.focus .top{
+    position:fixed;top:18px;left:26px;right:26px;z-index:30;
+    opacity:0;pointer-events:none;transition:opacity .4s;
+  }
+  body.focus.controls .top{opacity:1;pointer-events:auto}
   body.focus .hero{position:fixed;inset:0;z-index:20}
-  body.focus.controls .top{opacity:1;pointer-events:auto;position:relative;z-index:30}
 
   /* ============ STATS MODAL ============ */
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
@@ -190,7 +208,7 @@
     .time{font-size:56px}
     .panel{height:180px}
     .scene-btn{height:88px}
-    .eq{display:none}
+    .eq{height:14px;margin:4px 0 8px}
   }
 </style>
 </head>
@@ -231,15 +249,22 @@
       <div class="time" id="time">45:00</div>
     </div>
 
-    <button class="start" id="start">
-      <i class="ti ti-player-play" id="startIcon"></i>
-      <span id="startText">Start Focus</span>
-    </button>
+    <div class="controls-row">
+      <button class="ctl" id="resetBtn" aria-label="Reset"><i class="ti ti-refresh"></i></button>
+      <button class="start" id="start">
+        <i class="ti ti-player-play" id="startIcon"></i>
+        <span id="startText">Start Focus</span>
+      </button>
+      <button class="ctl" id="doneBtn" aria-label="Mark session complete"><i class="ti ti-check"></i></button>
+    </div>
 
     <div class="pomo-wrap">
-      <button class="pomo" id="pomoBtn"><i class="ti ti-clock"></i> <span id="pomoLabel">Pomodoro</span> \u2304</button>
+      <button class="pomo" id="pomoBtn"><i class="ti ti-clock"></i> <span id="pomoLabel">Pomodoro</span> <span aria-hidden="true">&#8964;</span></button>
       <div class="pomo-menu" id="pomoMenu">
-        <label class="pomo-opt">Enable Pomodoro <input type="checkbox" id="pomoToggle"></label>
+        <label class="pomo-opt pomo-enable" id="pomoEnableRow">
+          <span>Enable Pomodoro</span>
+          <span class="pomo-switch" id="pomoSwitch" role="checkbox" aria-checked="false" tabindex="0"></span>
+        </label>
         <div class="pomo-opt"><span>Short break</span><span>5 min</span></div>
         <div class="pomo-opt"><span>Long break</span><span>15 min</span></div>
         <div class="pomo-opt"><span>Cycle</span><span id="cycleLabel">1 of 4</span></div>
@@ -257,8 +282,9 @@
         <button class="dur" data-m="90">90<small>min</small></button>
       </div>
       <div class="breaks">
-        <div>Short Break <span>5 min</span></div>
-        <div>Long Break <span>15 min</span></div>
+        <div>Short break <span>5 min</span></div>
+        <div>Long break <span>15 min</span></div>
+        <div class="breaks-note">Applies when Pomodoro is turned on, below</div>
       </div>
     </div>
 
@@ -315,7 +341,7 @@
     <span class="k">Space</span>Start / Pause
     <span class="k">R</span>Reset
     <span class="k">F</span>Focus Mode
-    <span class="k">1\u20134</span>Change Scene
+    <span class="k">1-4</span>Change Scene
   </div>
 </div>
 
@@ -424,6 +450,19 @@
   }
 
   start.onclick=function(){ running?pause():play(); };
+  document.getElementById('resetBtn').onclick=reset;
+  document.getElementById('doneBtn').onclick=function(){
+    if(mode==='focus' && running){
+      recordSession(total-rem, false);
+    }
+    clearInterval(timer);
+    running=false;
+    rem=0;
+    startIcon.className='ti ti-player-play';
+    startText.textContent='Start Focus';
+    render();
+    stopAll();
+  };
 
   document.querySelectorAll('.dur').forEach(function(b){
     b.onclick=function(){
@@ -435,13 +474,29 @@
     };
   });
 
-  /* Pomodoro menu */
+  /* Pomodoro menu + toggle switch */
   const pomoBtn=document.getElementById('pomoBtn');
   const pomoMenu=document.getElementById('pomoMenu');
-  const pomoToggle=document.getElementById('pomoToggle');
-  pomoToggle.checked=pomoOn;
+  const pomoSwitch=document.getElementById('pomoSwitch');
+  const pomoEnableRow=document.getElementById('pomoEnableRow');
+
+  function setPomoOn(val){
+    pomoOn=val;
+    pomoSwitch.classList.toggle('on',val);
+    pomoSwitch.setAttribute('aria-checked',String(val));
+    localStorage.setItem('focus-pomo',val?'1':'0');
+  }
+  setPomoOn(pomoOn);
+
   pomoBtn.onclick=function(e){ e.stopPropagation(); pomoMenu.classList.toggle('open'); };
-  pomoToggle.onchange=function(){ pomoOn=pomoToggle.checked; localStorage.setItem('focus-pomo',pomoOn?'1':'0'); };
+  pomoEnableRow.addEventListener('click',function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    setPomoOn(!pomoOn);
+  });
+  pomoSwitch.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); setPomoOn(!pomoOn); }
+  });
   document.addEventListener('click',function(e){
     if(!pomoMenu.contains(e.target)&&e.target!==pomoBtn)pomoMenu.classList.remove('open');
   });
