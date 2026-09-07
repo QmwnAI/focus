@@ -85,8 +85,12 @@
   .ring-wrap{position:relative;width:min(52vh,340px);height:min(52vh,340px);display:flex;align-items:center;justify-content:center}
   .ring-svg{position:absolute;inset:0;width:100%;height:100%}
   .ring-svg .track{stroke:rgba(255,255,255,.16)}
-  .ring-svg .progress{stroke:#fff;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 10px rgba(255,255,255,.55))}
+  .ring-svg .progress{stroke:#fff;transition:stroke-dashoffset 1s linear,stroke .4s ease;filter:drop-shadow(0 0 10px rgba(255,255,255,.55))}
+  .ring-svg .progress.break{stroke:var(--green);filter:drop-shadow(0 0 10px rgba(81,216,138,.6))}
   .time{position:relative;z-index:2;font-size:clamp(46px,8.5vh,80px);font-weight:300;letter-spacing:-3px}
+
+  .mode-badge{padding:6px 16px;border-radius:20px;background:var(--green);color:#06210f;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;animation:badge-in .3s ease}
+  @keyframes badge-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
   .controls-row{display:flex;align-items:center;justify-content:center;gap:16px}
   .ctl{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;flex-shrink:0}
@@ -239,6 +243,7 @@
   </div>
 
   <main class="hero">
+    <div class="mode-badge" id="modeBadge" style="display:none"></div>
     <div class="ring-wrap">
       <svg class="ring-svg" viewBox="0 0 300 300" aria-hidden="true">
         <circle class="track" cx="150" cy="150" r="140" fill="none" stroke-width="3"/>
@@ -393,6 +398,23 @@
     document.getElementById('pomoLabel').textContent=mode==='break'?'Break':'Pomodoro';
     document.getElementById('cycleLabel').textContent=cycle+' of '+MAX_CYCLES;
     ring.style.strokeDashoffset = total ? ((total-rem)/total)*CIRC : 0;
+
+    const badge=document.getElementById('modeBadge');
+    if(mode==='break'){
+      badge.style.display='inline-block';
+      badge.textContent = (cycle===MAX_CYCLES ? 'Long Break' : 'Short Break');
+      ring.classList.add('break');
+    } else {
+      badge.style.display='none';
+      ring.classList.remove('break');
+    }
+
+    startIcon.className = running ? 'ti ti-player-pause' : 'ti ti-player-play';
+    if(running){
+      startText.textContent = mode==='break' ? 'On Break' : 'Pause';
+    } else {
+      startText.textContent = mode==='break' ? 'Start Break' : 'Start Focus';
+    }
   }
 
   function bell(){
@@ -417,15 +439,33 @@
     localStorage.setItem('focus-history',JSON.stringify(h));
   }
 
+  function cycleCompleteAlarm(){
+    try{
+      const c=new (window.AudioContext||window.webkitAudioContext)();
+      const notes=[659.25,783.99,987.77,1318.51];
+      [0,0.95].forEach(function(offset){
+        notes.forEach((f,i)=>{
+          const o=c.createOscillator(), g=c.createGain(), t=c.currentTime+offset+i*.18;
+          o.type='sine';
+          o.frequency.value=f;
+          g.gain.setValueAtTime(0,t);
+          g.gain.linearRampToValueAtTime(.28,t+.02);
+          g.gain.exponentialRampToValueAtTime(.001,t+1.0);
+          o.connect(g); g.connect(c.destination);
+          o.start(t); o.stop(t+1.0);
+        });
+      });
+    }catch(e){}
+  }
+
   function play(){
     if(rem<=0)return;
     running=true; startAt=Date.now(); startRem=rem;
-    startIcon.className='ti ti-player-pause'; startText.textContent='Pause';
     timer=setInterval(tick,250);
+    render();
   }
   function pause(){
     running=false; clearInterval(timer);
-    startIcon.className='ti ti-player-play'; startText.textContent='Start Focus';
     render();
   }
   function tick(){
@@ -434,15 +474,43 @@
     if(!rem)finish();
   }
   function finish(){
-    clearInterval(timer); running=false; bell();
+    clearInterval(timer); running=false;
     if(mode==='focus')recordSession(total,true);
-    if(pomoOn){
-      if(mode==='focus'){ mode='break'; total=(cycle===MAX_CYCLES?LONG_BREAK_MINS:BREAK_MINS)*60; rem=total; }
-      else { mode='focus'; cycle=cycle>=MAX_CYCLES?1:cycle+1; total=mins*60; rem=total; }
+
+    if(!pomoOn){
+      bell();
+      pause(); rem=0; render();
+      return;
+    }
+
+    if(mode==='focus'){
+      /* A focus block just ended -> move into its break. */
+      bell();
+      mode='break';
+      total=(cycle===MAX_CYCLES?LONG_BREAK_MINS:BREAK_MINS)*60;
+      rem=total;
       render();
       setTimeout(play,700);
+    } else if(cycle===MAX_CYCLES){
+      /* The break after the final cycle just ended -> the whole set is done. */
+      cycleCompleteAlarm();
+      mode='focus';
+      cycle=1;
+      total=mins*60;
+      rem=total;
+      render();
+      const prevText=timeEl.textContent;
+      timeEl.textContent='Done!';
+      setTimeout(function(){ timeEl.textContent=prevText; },2200);
     } else {
-      pause(); rem=0; render();
+      /* A regular break ended -> move into the next focus block. */
+      bell();
+      mode='focus';
+      cycle=cycle+1;
+      total=mins*60;
+      rem=total;
+      render();
+      setTimeout(play,700);
     }
   }
   function reset(){
@@ -457,9 +525,8 @@
     }
     clearInterval(timer);
     running=false;
+    mode='focus';
     rem=0;
-    startIcon.className='ti ti-player-play';
-    startText.textContent='Start Focus';
     render();
     stopAll();
   };
