@@ -303,7 +303,7 @@
       <div class="breaks">
         <div>Short break <span>5 min</span></div>
         <div>Long break <span>15 min</span></div>
-        <div class="breaks-note">Applies when Pomodoro is turned on</div>
+        <div class="breaks-note">Applies when Pomodoro is turned on, below</div>
       </div>
     </div>
 
@@ -778,12 +778,32 @@
   });
 
   /* YouTube */
+  let pendingYT=null;
+  let ytLoadTimedOut=false;
+
+  setTimeout(function(){
+    if(!ytReady){
+      ytLoadTimedOut=true;
+      if(pendingYT){
+        npTitle.textContent='Could not load YouTube — check your connection or ad blocker.';
+        pendingYT=null;
+      }
+    }
+  },8000);
+
   function onYouTubeIframeAPIReady(){
     ytPlayer=new YT.Player('yt-player',{
       height:'124',width:'220',
       playerVars:{autoplay:0,controls:0},
       events:{
-        onReady:function(){ ytReady=true; ytPlayer.setVolume(+vol.value); },
+        onReady:function(){
+          ytReady=true;
+          ytPlayer.setVolume(+vol.value);
+          if(pendingYT){
+            runYTRequest(pendingYT);
+            pendingYT=null;
+          }
+        },
         onStateChange:function(e){
           ytPlaying=e.data===YT.PlayerState.PLAYING;
           document.getElementById('ytIcon').className=ytPlaying?'ti ti-player-pause':'ti ti-player-play';
@@ -797,16 +817,7 @@
     const pMatch=u.match(/[?&]list=([\w-]+)/);
     return { v: vMatch?vMatch[1]:null, p: pMatch?pMatch[1]:null };
   }
-  function toggleYT(){
-    if(!ytReady)return;
-    if(currentSource==='yt'){
-      const data=ytPlayer.getVideoData();
-      if(data&&data.video_id){
-        ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();
-        return;
-      }
-    }
-    const x=parseYT(document.getElementById('ytInput').value.trim());
+  function runYTRequest(x){
     stopAll();
     if(x.p){
       ytPlayer.loadPlaylist({list:x.p,listType:'playlist',index:0});
@@ -817,6 +828,30 @@
       ytPlayer.loadVideoById(x.v);
       currentSource='yt';
       npTitle.textContent='YouTube audio';
+    }
+  }
+  function toggleYT(){
+    if(!ytReady){
+      const x=parseYT(document.getElementById('ytInput').value.trim());
+      if(!x.p && !x.v){ alert('Please paste a valid YouTube video or playlist link.'); return; }
+      if(ytLoadTimedOut){
+        npTitle.textContent='Could not load YouTube — check your connection or ad blocker.';
+        return;
+      }
+      pendingYT=x;
+      npTitle.textContent='Connecting to YouTube...';
+      return;
+    }
+    if(currentSource==='yt'){
+      const data=ytPlayer.getVideoData();
+      if(data&&data.video_id){
+        ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();
+        return;
+      }
+    }
+    const x=parseYT(document.getElementById('ytInput').value.trim());
+    if(x.p||x.v){
+      runYTRequest(x);
     } else {
       alert('Please paste a valid YouTube video or playlist link.');
     }
