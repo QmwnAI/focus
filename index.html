@@ -281,8 +281,32 @@
           <span>Enable Pomodoro</span>
           <span class="pomo-switch" id="pomoSwitch" role="checkbox" aria-checked="false" tabindex="0"></span>
         </label>
-        <div class="pomo-opt"><span>Short break</span><span>5 min</span></div>
-        <div class="pomo-opt"><span>Long break</span><span>15 min</span></div>
+        <div class="pomo-opt">
+          <span>Short break</span>
+          <div>
+            <input
+              type="number"
+              id="shortBreakInput"
+              value="5"
+              min="1"
+              max="60"
+            >
+            min
+          </div>
+        </div>
+        <div class="pomo-opt">
+          <span>Long break</span>
+          <div>
+            <input
+              type="number"
+              id="longBreakInput"
+              value="15"
+              min="1"
+              max="120"
+            >
+            min
+          </div>
+        </div>
         <div class="pomo-opt"><span>Cycle</span><span id="cycleLabel">1 of 4</span></div>
       </div>
     </div>
@@ -394,7 +418,9 @@
 <div id="yt-player" style="position:fixed;width:220px;height:124px;right:16px;bottom:16px;opacity:.001;pointer-events:none"></div>
 
 <script>
-  const BREAK_MINS=5, LONG_BREAK_MINS=15, MAX_CYCLES=4;
+  let BREAK_MINS = 5;
+  let LONG_BREAK_MINS = 15;
+  const MAX_CYCLES = 4;
   const CIRC=879.65;
   let mins=45, total=mins*60, rem=total, running=false, timer=null, startAt=0, startRem=0;
   let mode='focus', pomoOn=localStorage.getItem('focus-pomo')==='1', cycle=1;
@@ -602,6 +628,30 @@
   const pomoMenu=document.getElementById('pomoMenu');
   const pomoSwitch=document.getElementById('pomoSwitch');
   const pomoEnableRow=document.getElementById('pomoEnableRow');
+
+  const shortBreakInput =
+  document.getElementById('shortBreakInput');
+
+  const longBreakInput =
+  document.getElementById('longBreakInput');
+
+
+  shortBreakInput.addEventListener('change', function () {
+    const newShortBreak =
+      parseInt(shortBreakInput.value, 10);
+    if (newShortBreak >= 1 && newShortBreak <= 60) {
+      BREAK_MINS = newShortBreak;
+    }
+  });
+
+
+  longBreakInput.addEventListener('change', function () {
+    const newLongBreak =
+      parseInt(longBreakInput.value, 10);
+    if (newLongBreak >= 1 && newLongBreak <= 120) {
+      LONG_BREAK_MINS = newLongBreak;
+    }
+  });
 
   function setPomoOn(val){
     pomoOn=val;
