@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Focus</title>
+<link rel="icon" href="data:,">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
 <script src="https://www.youtube.com/iframe_api"></script>
 <style>
@@ -772,8 +773,12 @@
   document.getElementById('musicToggle').onclick=function(){
     if(currentSource==='yt'){ toggleYT(); return; }
     if(currentSource==='radio'||currentSource==='mp3'){
-      if(audio.paused){ audio.play(); musicIcon.className='ti ti-player-pause'; }
-      else { audio.pause(); musicIcon.className='ti ti-player-play'; }
+      if(audio.paused){
+        audio.play().catch(function(){});
+        musicIcon.className='ti ti-player-pause';
+      } else {
+        audio.pause(); musicIcon.className='ti ti-player-play';
+      }
       return;
     }
     if(STATIONS.length){
@@ -796,7 +801,7 @@
     stopAll();
     audio.src=URL.createObjectURL(f);
     audio.loop=true;
-    audio.play();
+    audio.play().catch(function(){});
     currentSource='mp3';
     npTitle.textContent=f.name;
     musicIcon.className='ti ti-player-pause';
@@ -822,19 +827,13 @@
     tab.addEventListener('click',function(){ activateMusicPane(tab); });
   });
 
-  /* YouTube */
+  /* ===================== YouTube ===================== */
+  /* pendingYT holds a video/playlist request made before the player is
+     ready. ytCheckTimer is (re)started per attempt so a failed load never
+     permanently blocks future retries — clicking Play again always tries
+     again instead of repeating a stale error forever. */
   let pendingYT=null;
-  let ytLoadTimedOut=false;
-
-  setTimeout(function(){
-    if(!ytReady){
-      ytLoadTimedOut=true;
-      if(pendingYT){
-        npTitle.textContent='Could not load YouTube — check your connection or ad blocker.';
-        pendingYT=null;
-      }
-    }
-  },8000);
+  let ytCheckTimer=null;
 
   function onYouTubeIframeAPIReady(){
     ytPlayer=new YT.Player('yt-player',{
@@ -843,6 +842,7 @@
       events:{
         onReady:function(){
           ytReady=true;
+          if(ytCheckTimer){ clearTimeout(ytCheckTimer); ytCheckTimer=null; }
           ytPlayer.setVolume(+vol.value);
           if(pendingYT){
             runYTRequest(pendingYT);
@@ -879,12 +879,16 @@
     if(!ytReady){
       const x=parseYT(document.getElementById('ytInput').value.trim());
       if(!x.p && !x.v){ alert('Please paste a valid YouTube video or playlist link.'); return; }
-      if(ytLoadTimedOut){
-        npTitle.textContent='Could not load YouTube — check your connection or ad blocker.';
-        return;
-      }
       pendingYT=x;
       npTitle.textContent='Connecting to YouTube...';
+      if(ytCheckTimer){ clearTimeout(ytCheckTimer); }
+      ytCheckTimer=setTimeout(function(){
+        if(!ytReady){
+          npTitle.textContent='Could not load YouTube — check your connection or ad blocker. Click Play to retry.';
+          pendingYT=null;
+        }
+        ytCheckTimer=null;
+      },8000);
       return;
     }
     if(currentSource==='yt'){
