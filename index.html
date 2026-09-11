@@ -710,7 +710,7 @@
     }
   });
 
-  /* ==================== Music: SomaFM / YouTube / Upload ===================== */
+  /* ===================== Music: SomaFM / YouTube / Upload ===================== */
   const audio=document.getElementById('audio');
   const vol=document.getElementById('vol');
   const musicIcon=document.getElementById('musicIcon');
@@ -749,6 +749,7 @@
     if(ytPlayer&&ytReady){ try{ ytPlayer.stopVideo(); }catch(e){} }
     ytPlaying=false;
     currentSource=null;
+    currentYT=null;
     musicIcon.className='ti ti-player-play';
     document.getElementById('ytIcon').className='ti ti-player-play';
     document.querySelectorAll('.station').forEach(function(x){ x.classList.remove('on'); });
@@ -834,6 +835,7 @@
      again instead of repeating a stale error forever. */
   let pendingYT=null;
   let ytCheckTimer=null;
+  let currentYT=null;
 
   function onYouTubeIframeAPIReady(){
     ytPlayer=new YT.Player('yt-player',{
@@ -868,10 +870,12 @@
       ytPlayer.loadPlaylist({list:x.p,listType:'playlist',index:0});
       ytPlayer.setLoop(true);
       currentSource='yt';
+      currentYT={type:'playlist',id:x.p};
       npTitle.textContent='YouTube playlist';
     } else if(x.v){
       ytPlayer.loadVideoById(x.v);
       currentSource='yt';
+      currentYT={type:'video',id:x.v};
       npTitle.textContent='YouTube audio';
     }
   }
@@ -891,17 +895,28 @@
       },8000);
       return;
     }
-    if(currentSource==='yt'){
+
+    const raw=document.getElementById('ytInput').value.trim();
+    const x=raw?parseYT(raw):{v:null,p:null};
+
+    /* A "new request" is a link that differs from whatever's already
+       loaded (or nothing loaded yet). An empty box, or the same link
+       typed again, is just a play/pause toggle on the current item. */
+    const isNewRequest=
+      (x.p && (!currentYT || currentYT.type!=='playlist' || currentYT.id!==x.p)) ||
+      (x.v && (!currentYT || currentYT.type!=='video' || currentYT.id!==x.v));
+
+    if(currentSource==='yt' && !isNewRequest){
       const data=ytPlayer.getVideoData();
       if(data&&data.video_id){
         ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();
         return;
       }
     }
-    const x=parseYT(document.getElementById('ytInput').value.trim());
+
     if(x.p||x.v){
       runYTRequest(x);
-    } else {
+    } else if(currentSource!=='yt'){
       alert('Please paste a valid YouTube video or playlist link.');
     }
   }
