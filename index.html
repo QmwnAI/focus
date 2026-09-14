@@ -159,8 +159,8 @@
   .vol{display:flex;gap:9px;align-items:center;margin-top:auto}
   .vol input{width:100%}
 
-  .music-source-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
-  .music-tab{border:0;border-radius:8px;padding:7px 3px;background:rgba(255,255,255,.07);color:var(--dim);font-size:11px;cursor:pointer;transition:background .18s,color .18s}
+  .music-source-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+  .music-tab{flex:1 1 28%;border:0;border-radius:8px;padding:7px 3px;background:rgba(255,255,255,.07);color:var(--dim);font-size:11px;cursor:pointer;transition:background .18s,color .18s}
   .music-tab:hover{background:rgba(255,255,255,.12);color:#fff}
   .music-tab.on{background:rgba(255,255,255,.16);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
   .music-pane{display:none}
@@ -194,6 +194,12 @@
   .spotify-connected .station-list{margin-bottom:10px}
   .spotify-track{font-size:11px;color:var(--muted)}
   .spotify-credit{margin-top:10px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:.3px}
+
+  .apple-tab.on{background:linear-gradient(135deg,#fa233b,#fb5c74);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+  .apple-station-list{max-height:110px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.35) transparent}
+  .apple-station-list .station.on{background:linear-gradient(135deg,#fa233b,#fb5c74);border-color:transparent;color:#fff}
+  .apple-station-list .station.on small{color:rgba(255,255,255,.85)}
+  .apple-player-wrap{margin-top:8px;border-radius:9px;overflow:hidden}
 
   .footer{text-align:center;font-size:11px;color:var(--dim);padding-top:8px}
   .k{padding:3px 7px;background:rgba(10,15,25,.55);border:1px solid var(--border);border-radius:5px;margin-left:12px;margin-right:4px}
@@ -373,6 +379,7 @@
         <button class="music-tab source-switch" data-pane="youtubePane" role="tab" aria-selected="false" type="button">YouTube</button>
         <button class="music-tab source-switch" data-pane="uploadPane" role="tab" aria-selected="false" type="button">Upload</button>
         <button class="music-tab source-switch" data-pane="spotifyPane" role="tab" aria-selected="false" type="button">Spotify</button>
+        <button class="music-tab source-switch apple-tab" data-pane="applePane" role="tab" aria-selected="false" type="button"><i class="ti ti-brand-apple"></i> Apple Music</button>
       </div>
 
       <div class="music-pane on" id="radioPane">
@@ -412,6 +419,14 @@
           <button class="compact-upload" id="spotifyDisconnectBtn" type="button">Disconnect Spotify</button>
         </div>
         <div class="spotify-credit">Credits to Room 639 · Spotify Premium required</div>
+      </div>
+
+      <div class="music-pane" id="applePane">
+        <div class="station-list apple-station-list" id="appleStationList"></div>
+        <div class="apple-player-wrap">
+          <iframe id="applePlayerFrame" src="" width="100%" height="90" frameborder="0" allow="autoplay"></iframe>
+        </div>
+        <p class="spotify-note">No Apple Account needed — these six stations are free via Apple's TuneIn partnership. Use the player above to pause or adjust volume.</p>
       </div>
     </div>
   </section>
@@ -789,6 +804,8 @@
     audio.pause();
     if(ytPlayer&&ytReady){ try{ ytPlayer.stopVideo(); }catch(e){} }
     if(spotifyPlayer&&currentSource==='spotify'){ try{ spotifyPlayer.pause(); }catch(e){} }
+    const appleFrame=document.getElementById('applePlayerFrame');
+    if(appleFrame&&appleFrame.src)appleFrame.src='';
     ytPlaying=false;
     spotifyPlaying=false;
     currentSource=null;
@@ -818,6 +835,10 @@
     if(currentSource==='yt'){ toggleYT(); return; }
     if(currentSource==='spotify'&&spotifyPlayer){
       spotifyPlaying?spotifyPlayer.pause():spotifyPlayer.resume();
+      return;
+    }
+    if(currentSource==='apple'){
+      npTitle.textContent='Use the Apple Music player controls above';
       return;
     }
     if(currentSource==='radio'||currentSource==='mp3'){
@@ -1186,6 +1207,39 @@
     loadSpotifySDK();
     spotifyLoadPlaylists();
   }
+
+  /* ===================== Apple Music (via TuneIn) ===================== */
+  /* Free, no Apple Account needed, no Premium needed — but TuneIn's embed
+     iframe has no public JS control API, so these buttons only pick which
+     station loads. Play/pause/volume for whatever's loaded happens inside
+     the iframe itself, using TuneIn's own on-screen controls. */
+  const APPLE_STATIONS=[
+    {name:'Apple Music 1',desc:'Pop culture & artist-led radio',tuneinId:'s345732'},
+    {name:'Apple Music Hits',desc:'80s, 90s & 2000s hits',tuneinId:'s345724'},
+    {name:'Apple Music Country',desc:'Every lane of country',tuneinId:'s345725'},
+    {name:'Apple Música Uno',desc:'Latin music, all genres',tuneinId:'s345727'},
+    {name:'Apple Music Club',desc:'Dance & electronic, 24/7',tuneinId:'s345726'},
+    {name:'Apple Music Chill',desc:'Low-tempo, relaxing',tuneinId:'s345733'}
+  ];
+
+  const appleStationListEl=document.getElementById('appleStationList');
+  const applePlayerFrame=document.getElementById('applePlayerFrame');
+
+  APPLE_STATIONS.forEach(function(st){
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='station';
+    b.innerHTML='<strong>'+st.name+'</strong><small>'+st.desc+'</small>';
+    b.onclick=function(){
+      stopAll();
+      applePlayerFrame.src='https://tunein.com/embed/player/'+st.tuneinId+'/?autoplay=true';
+      document.querySelectorAll('.station').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      currentSource='apple';
+      npTitle.textContent=st.name;
+    };
+    appleStationListEl.appendChild(b);
+  });
 
   (async function spotifyBoot(){
     const params=new URLSearchParams(window.location.search);
