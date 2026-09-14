@@ -278,11 +278,67 @@
   .clear-btn{width:100%;padding:10px;border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:9px;cursor:pointer}
 
   /* ============ RESPONSIVE ============ */
-  @media(max-width:950px){
-    .panel{grid-template-columns:1fr 1fr;height:auto;overflow:auto}
-    .section{border-bottom:1px solid rgba(255,255,255,.08)}
-    .app{overflow:auto;height:auto;min-height:100vh}
-    .hero{min-height:420px}
+  @media (max-width:950px) {
+    html,
+    body {
+      height: auto;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    body {
+      min-height: 100vh;
+      -webkit-overflow-scrolling: touch;
+    }
+    .app {
+      height: auto;
+      min-height: 100vh;
+      overflow: visible;
+      padding-bottom: 30px;
+    }
+    .hero {
+      flex: none;
+      min-height: 420px;
+    }
+    .panel {
+      height: auto;
+      min-height: 0;
+      grid-template-columns: 1fr 1fr;
+      overflow: visible;
+    }
+    .section {
+      overflow: visible;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .station-list {
+      max-height: 220px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  @media (max-width: 600px){
+    .app{
+      padding: 14px;
+    }
+    .hero{
+      min-height: 390px;
+    }
+    .panel{
+      grid-template-columns: 1fr;
+    }
+    .section{
+      border-right: none;
+    }
+    .ring-wrap{
+      width: min(75vw, 300px);
+      height: min(75vw, 300px);
+    }
+    .scenes{
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .scene-btn{
+      height: 100px;
+    }
   }
   @media(min-width:951px) and (max-height:760px){
     .ring-wrap{width:min(40vh,280px);height:min(40vh,280px)}
