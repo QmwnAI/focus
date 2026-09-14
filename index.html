@@ -180,6 +180,9 @@
   .ytrow button{width:38px;border:0;border-radius:9px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
   .compact-upload{width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;font-size:12px}
 
+  .yt-player-box{position:fixed;right:16px;bottom:16px;width:220px;height:124px;opacity:.001;pointer-events:none;transition:opacity .2s;z-index:5;border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);background:#000}
+  .yt-player-box.visible{opacity:1;pointer-events:auto;z-index:200;border:1px solid var(--border)}
+
   .footer{text-align:center;font-size:11px;color:var(--dim);padding-top:8px}
   .k{padding:3px 7px;background:rgba(10,15,25,.55);border:1px solid var(--border);border-radius:5px;margin-left:12px;margin-right:4px}
 
@@ -367,8 +370,8 @@
         <div class="ytrow">
           <input id="ytInput" placeholder="YouTube video / playlist">
           <button id="ytToggle"><i class="ti ti-player-play" id="ytIcon"></i></button>
+          <button id="ytShowBtn" aria-label="Show player" type="button"><i class="ti ti-eye"></i></button>
         </div>
-      </div>
 
       <div class="music-pane" id="uploadPane">
         <button class="compact-upload" id="uploadBtn"><i class="ti ti-upload"></i> Choose audio file</button>
@@ -411,7 +414,9 @@
 </div>
 
 <audio id="audio"></audio>
-<div id="yt-player" style="position:fixed;width:220px;height:124px;right:16px;bottom:16px;opacity:.001;pointer-events:none"></div>
+<div class="yt-player-box" id="ytPlayerBox">
+  <div id="yt-player"></div>
+</div>
 
 <script>
   let BREAK_MINS = 5;
@@ -907,9 +912,13 @@
       (x.v && (!currentYT || currentYT.type!=='video' || currentYT.id!==x.v));
 
     if(currentSource==='yt' && !isNewRequest){
-      const data=ytPlayer.getVideoData();
-      if(data&&data.video_id){
-        ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();
+      const state=ytPlayer.getPlayerState();
+      if(state===YT.PlayerState.PLAYING || state===YT.PlayerState.BUFFERING){
+        ytPlayer.pauseVideo();
+        return;
+      }
+      if(state===YT.PlayerState.PAUSED || state===YT.PlayerState.CUED){
+        ytPlayer.playVideo();
         return;
       }
     }
@@ -924,6 +933,14 @@
   document.getElementById('ytInput').addEventListener('keydown',function(e){
     if(e.key==='Enter'){ e.preventDefault(); toggleYT(); }
   });
+
+  const ytPlayerBox=document.getElementById('ytPlayerBox');
+  const ytShowBtn=document.getElementById('ytShowBtn');
+  ytShowBtn.onclick=function(){
+    const showing=ytPlayerBox.classList.toggle('visible');
+    ytShowBtn.innerHTML = showing ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>';
+    ytShowBtn.setAttribute('aria-label', showing ? 'Hide player' : 'Show player');
+  };
 
   /* Stats modal */
   const statsModal=document.getElementById('statsModal');
