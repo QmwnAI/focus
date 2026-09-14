@@ -180,8 +180,52 @@
   .ytrow button{width:38px;border:0;border-radius:9px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
   .compact-upload{width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;font-size:12px}
 
-  .yt-player-box{position:fixed;right:16px;bottom:16px;width:220px;height:124px;opacity:.001;pointer-events:none;transition:opacity .2s;z-index:5;border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);background:#000}
-  .yt-player-box.visible{opacity:1;pointer-events:auto;z-index:200;border:1px solid var(--border)}
+  .yt-player-box {
+    position: fixed;
+
+    /* Middle-right of the screen */
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  
+    /* Responsive size */
+    width: min(320px, 42vw);
+    aspect-ratio: 16 / 9;
+    height: auto;
+  
+    opacity: 0.001;
+    pointer-events: none;
+  
+    transition: opacity 0.2s;
+    z-index: 5;
+  
+    border-radius: 10px;
+    overflow: hidden;
+  
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: #000;
+  }
+  
+  .yt-player-box.visible {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 200;
+    border: 1px solid var(--border);
+  }
+  
+  /* Make the YouTube iframe fill the popup */
+  .yt-player-box iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Phones */
+  @media (max-width: 600px) {
+    .yt-player-box {
+      right: 10px;
+      width: min(260px, 65vw);
+    }
+  }
 
   .spotify-note{font-size:11px;color:var(--dim);line-height:1.5;margin:0 0 8px}
   .spotify-note a{color:var(--accent)}
