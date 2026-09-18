@@ -477,7 +477,6 @@
       <div class="music-source-tabs" role="tablist" aria-label="Music source">
         <button class="music-tab source-switch on" data-pane="radioPane" role="tab" aria-selected="true" type="button">SomaFM</button>
         <button class="music-tab source-switch" data-pane="youtubePane" role="tab" aria-selected="false" type="button">YouTube</button>
-        <button class="music-tab source-switch" data-pane="uploadPane" role="tab" aria-selected="false" type="button">Upload</button>
         <button class="music-tab source-switch" data-pane="spotifyPane" role="tab" aria-selected="false" type="button">Spotify</button>
         <button class="music-tab source-switch apple-tab" data-pane="applePane" role="tab" aria-selected="false" type="button">Apple Music</button>
       </div>
@@ -492,11 +491,6 @@
           <button id="ytToggle"><i class="ti ti-player-play" id="ytIcon"></i></button>
           <button id="ytShowBtn" aria-label="Show player" type="button"><i class="ti ti-eye"></i></button>
         </div>
-      </div>
-
-      <div class="music-pane" id="uploadPane">
-        <button class="compact-upload" id="uploadBtn"><i class="ti ti-upload"></i> Choose audio file</button>
-        <input type="file" id="upload" accept="audio/*" hidden>
       </div>
 
       <div class="music-pane" id="spotifyPane">
@@ -865,7 +859,7 @@
     }
   });
 
-  /* ===================== Music: SomaFM / YouTube / Upload ===================== */
+  /* ===================== Music: SomaFM / YouTube ===================== */
   const audio=document.getElementById('audio');
   const vol=document.getElementById('vol');
   const musicIcon=document.getElementById('musicIcon');
@@ -940,7 +934,7 @@
       npTitle.textContent='Use the Apple Music player controls under the stations instead';
       return;
     }
-    if(currentSource==='radio'||currentSource==='mp3'){
+    if(currentSource==='radio'){
       if(audio.paused){
         audio.play().catch(function(){});
         musicIcon.className='ti ti-player-pause';
@@ -960,20 +954,6 @@
     if(ytPlayer&&ytReady)ytPlayer.setVolume(+vol.value);
     if(spotifyPlayer)spotifyPlayer.setVolume(vol.value/100);
     localStorage.setItem('focus-vol',vol.value);
-  };
-
-  /* Upload */
-  document.getElementById('uploadBtn').onclick=function(){ document.getElementById('upload').click(); };
-  document.getElementById('upload').onchange=function(e){
-    const f=e.target.files[0];
-    if(!f)return;
-    stopAll();
-    audio.src=URL.createObjectURL(f);
-    audio.loop=true;
-    audio.play().catch(function(){});
-    currentSource='mp3';
-    npTitle.textContent=f.name;
-    musicIcon.className='ti ti-player-pause';
   };
 
   /* Music source tabs */
@@ -1075,9 +1055,13 @@
       (x.v && (!currentYT || currentYT.type!=='video' || currentYT.id!==x.v));
 
     if(currentSource==='yt' && !isNewRequest){
-      const data=ytPlayer.getVideoData();
-      if(data&&data.video_id){
-        ytPlaying?ytPlayer.pauseVideo():ytPlayer.playVideo();
+      const state=ytPlayer.getPlayerState();
+      if(state===YT.PlayerState.PLAYING || state===YT.PlayerState.BUFFERING){
+        ytPlayer.pauseVideo();
+        return;
+      }
+      if(state===YT.PlayerState.PAUSED || state===YT.PlayerState.CUED){
+        ytPlayer.playVideo();
         return;
       }
     }
