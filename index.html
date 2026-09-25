@@ -874,15 +874,15 @@
   /* Use SomaFM's stable channel URLs rather than a specific ice server.
      SomaFM can move direct streams between ice servers as availability changes. */
   const STATIONS=[
-    {name:'Groove Salad',desc:'ambient / downtempo',url:'https://ice.somafm.com/groovesalad'},
-    {name:'Drone Zone',desc:'atmospheric ambient',url:'https://ice.somafm.com/dronezone'},
-    {name:'Deep Space One',desc:'deep ambient',url:'https://ice.somafm.com/deepspaceone'},
-    {name:'Space Station',desc:'ambient downtempo',url:'https://ice.somafm.com/spacestation'},
-    {name:'Lush',desc:'mellow vocals',url:'https://ice.somafm.com/lush'},
-    {name:'Fluid',desc:'chilled hip-hop',url:'https://ice.somafm.com/fluid'},
-    {name:'Beat Blender',desc:'deep house',url:'https://ice.somafm.com/beatblender'},
-    {name:'Secret Agent',desc:'spy-jazz lounge',url:'https://ice.somafm.com/secretagent'},
-    {name:'Folk Forward',desc:'indie / alt-folk',url:'https://ice.somafm.com/folkfwd'}
+    {name:'Groove Salad',desc:'ambient / downtempo',url:'https://ice5.somafm.com/groovesalad-128-mp3',fallback:'https://ice2.somafm.com/groovesalad-128-mp3'},
+    {name:'Drone Zone',desc:'atmospheric ambient',url:'https://ice5.somafm.com/dronezone-128-mp3',fallback:'https://ice2.somafm.com/dronezone-128-mp3'},
+    {name:'Deep Space One',desc:'deep ambient',url:'https://ice5.somafm.com/deepspaceone-128-mp3',fallback:'https://ice2.somafm.com/deepspaceone-128-mp3'},
+    {name:'Space Station',desc:'ambient downtempo',url:'https://ice5.somafm.com/spacestation-128-mp3',fallback:'https://ice2.somafm.com/spacestation-128-mp3'},
+    {name:'Lush',desc:'mellow vocals',url:'https://ice5.somafm.com/lush-128-mp3',fallback:'https://ice2.somafm.com/lush-128-mp3'},
+    {name:'Fluid',desc:'chilled hip-hop',url:'https://ice5.somafm.com/fluid-128-mp3',fallback:'https://ice2.somafm.com/fluid-128-mp3'},
+    {name:'Beat Blender',desc:'deep house',url:'https://ice5.somafm.com/beatblender-128-mp3',fallback:'https://ice2.somafm.com/beatblender-128-mp3'},
+    {name:'Secret Agent',desc:'spy-jazz lounge',url:'https://ice5.somafm.com/secretagent-128-mp3',fallback:'https://ice2.somafm.com/secretagent-128-mp3'},
+    {name:'Folk Forward',desc:'indie / alt-folk',url:'https://ice5.somafm.com/folkfwd-128-mp3',fallback:'https://ice2.somafm.com/folkfwd-128-mp3'}
   ];
 
   const stationListEl=document.getElementById('stationList');
@@ -911,40 +911,54 @@
   }
 
   function toggleStation(s,btn){
-    if(currentSource==='radio'&&audio.src===s.url&&!audio.paused){
+    if(currentSource==='radio'&&audio.dataset.station===s.name&&!audio.paused){
       stopAll();
       npTitle.textContent='Nothing playing';
       return;
     }
+
     stopAll();
-    audio.src=s.url;
+    currentSource='radio';
+    audio.dataset.station=s.name;
     audio.loop=false;
     audio.preload='none';
-    currentSource='radio';
 
-    /* load() forces the browser to discard any failed previous media request. */
-    audio.load();
+    const sources=[s.url,s.fallback].filter(Boolean);
+    let sourceIndex=0;
 
-    audio.play().then(function(){
-      btn.classList.add('on');
-      musicIcon.className='ti ti-player-pause';
-      npTitle.textContent=s.name;
-      localStorage.setItem('focus-station',s.url);
-    }).catch(function(err){
-      console.error('SomaFM playback failed:', {
-        station:s.name,
-        url:s.url,
-        name:err && err.name,
-        message:err && err.message,
-        mediaError:audio.error && {
-          code:audio.error.code,
-          message:audio.error.message
+    function trySource(){
+      const streamUrl=sources[sourceIndex];
+      audio.src=streamUrl;
+      audio.load();
+
+      audio.play().then(function(){
+        btn.classList.add('on');
+        musicIcon.className='ti ti-player-pause';
+        npTitle.textContent=s.name;
+        localStorage.setItem('focus-station',s.url);
+      }).catch(function(err){
+        console.error('SomaFM playback failed:', {
+          station:s.name,
+          url:streamUrl,
+          name:err&&err.name,
+          message:err&&err.message,
+          mediaError:audio.error&&{code:audio.error.code,message:audio.error.message}
+        });
+
+        sourceIndex+=1;
+        if(sourceIndex<sources.length){
+          npTitle.textContent='Trying alternate SomaFM server…';
+          trySource();
+          return;
         }
+
+        currentSource=null;
+        musicIcon.className='ti ti-player-play';
+        npTitle.textContent='Could not play this SomaFM station.';
       });
-      currentSource=null;
-      musicIcon.className='ti ti-player-play';
-      npTitle.textContent='SomaFM playback failed — check the browser console.';
-    });
+    }
+
+    trySource();
   }
 
   document.getElementById('musicToggle').onclick=function(){
