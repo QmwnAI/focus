@@ -475,17 +475,12 @@
     <div class="section">
       <div class="label">Music Source</div>
       <div class="music-source-tabs" role="tablist" aria-label="Music source">
-        <button class="music-tab source-switch on" data-pane="radioPane" role="tab" aria-selected="true" type="button">SomaFM</button>
-        <button class="music-tab source-switch" data-pane="youtubePane" role="tab" aria-selected="false" type="button">YouTube</button>
+        <button class="music-tab source-switch on" data-pane="youtubePane" role="tab" aria-selected="true" type="button">YouTube</button>
         <button class="music-tab source-switch" data-pane="spotifyPane" role="tab" aria-selected="false" type="button">Spotify</button>
         <button class="music-tab source-switch apple-tab" data-pane="applePane" role="tab" aria-selected="false" type="button">Apple Music</button>
       </div>
 
-      <div class="music-pane on" id="radioPane">
-        <div class="station-list" id="stationList"></div>
-      </div>
-
-      <div class="music-pane" id="youtubePane">
+      <div class="music-pane on" id="youtubePane">
         <div class="ytrow">
           <input id="ytInput" placeholder="YouTube video / playlist">
           <button id="ytToggle"><i class="ti ti-player-play" id="ytIcon"></i></button>
@@ -859,7 +854,7 @@
     }
   });
 
-  /* ===================== Music: SomaFM / YouTube ===================== */
+  /* ===================== Music: YouTube / Spotify / Apple Music ===================== */
   const audio=document.getElementById('audio');
   const vol=document.getElementById('vol');
   const musicIcon=document.getElementById('musicIcon');
@@ -870,30 +865,6 @@
 
   let currentSource=null;
   let ytPlayer=null, ytReady=false, ytPlaying=false;
-
-  /* Use SomaFM's stable channel URLs rather than a specific ice server.
-     SomaFM can move direct streams between ice servers as availability changes. */
-  const STATIONS=[
-    {name:'Groove Salad',desc:'ambient / downtempo',url:'https://ice5.somafm.com/groovesalad-128-mp3',fallback:'https://ice2.somafm.com/groovesalad-128-mp3'},
-    {name:'Drone Zone',desc:'atmospheric ambient',url:'https://ice5.somafm.com/dronezone-128-mp3',fallback:'https://ice2.somafm.com/dronezone-128-mp3'},
-    {name:'Deep Space One',desc:'deep ambient',url:'https://ice5.somafm.com/deepspaceone-128-mp3',fallback:'https://ice2.somafm.com/deepspaceone-128-mp3'},
-    {name:'Space Station',desc:'ambient downtempo',url:'https://ice5.somafm.com/spacestation-128-mp3',fallback:'https://ice2.somafm.com/spacestation-128-mp3'},
-    {name:'Lush',desc:'mellow vocals',url:'https://ice5.somafm.com/lush-128-mp3',fallback:'https://ice2.somafm.com/lush-128-mp3'},
-    {name:'Fluid',desc:'chilled hip-hop',url:'https://ice5.somafm.com/fluid-128-mp3',fallback:'https://ice2.somafm.com/fluid-128-mp3'},
-    {name:'Beat Blender',desc:'deep house',url:'https://ice5.somafm.com/beatblender-128-mp3',fallback:'https://ice2.somafm.com/beatblender-128-mp3'},
-    {name:'Secret Agent',desc:'spy-jazz lounge',url:'https://ice5.somafm.com/secretagent-128-mp3',fallback:'https://ice2.somafm.com/secretagent-128-mp3'},
-    {name:'Folk Forward',desc:'indie / alt-folk',url:'https://ice5.somafm.com/folkfwd-128-mp3',fallback:'https://ice2.somafm.com/folkfwd-128-mp3'}
-  ];
-
-  const stationListEl=document.getElementById('stationList');
-  STATIONS.forEach(function(s){
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='station';
-    b.innerHTML='<strong>'+s.name+'</strong><small>'+s.desc+'</small>';
-    b.onclick=function(){ toggleStation(s,b); };
-    stationListEl.appendChild(b);
-  });
 
   function stopAll(){
     audio.pause();
@@ -910,57 +881,6 @@
     document.querySelectorAll('.station').forEach(function(x){ x.classList.remove('on'); });
   }
 
-  function toggleStation(s,btn){
-    if(currentSource==='radio'&&audio.dataset.station===s.name&&!audio.paused){
-      stopAll();
-      npTitle.textContent='Nothing playing';
-      return;
-    }
-
-    stopAll();
-    currentSource='radio';
-    audio.dataset.station=s.name;
-    audio.loop=false;
-    audio.preload='none';
-
-    const sources=[s.url,s.fallback].filter(Boolean);
-    let sourceIndex=0;
-
-    function trySource(){
-      const streamUrl=sources[sourceIndex];
-      audio.src=streamUrl;
-      audio.load();
-
-      audio.play().then(function(){
-        btn.classList.add('on');
-        musicIcon.className='ti ti-player-pause';
-        npTitle.textContent=s.name;
-        localStorage.setItem('focus-station',s.url);
-      }).catch(function(err){
-        console.error('SomaFM playback failed:', {
-          station:s.name,
-          url:streamUrl,
-          name:err&&err.name,
-          message:err&&err.message,
-          mediaError:audio.error&&{code:audio.error.code,message:audio.error.message}
-        });
-
-        sourceIndex+=1;
-        if(sourceIndex<sources.length){
-          npTitle.textContent='Trying alternate SomaFM server…';
-          trySource();
-          return;
-        }
-
-        currentSource=null;
-        musicIcon.className='ti ti-player-play';
-        npTitle.textContent='Could not play this SomaFM station.';
-      });
-    }
-
-    trySource();
-  }
-
   document.getElementById('musicToggle').onclick=function(){
     if(currentSource==='yt'){ toggleYT(); return; }
     if(currentSource==='spotify'&&spotifyPlayer){
@@ -971,19 +891,7 @@
       npTitle.textContent='Use the Apple Music player controls under the stations instead';
       return;
     }
-    if(currentSource==='radio'){
-      if(audio.paused){
-        audio.play().catch(function(){});
-        musicIcon.className='ti ti-player-pause';
-      } else {
-        audio.pause(); musicIcon.className='ti ti-player-play';
-      }
-      return;
-    }
-    if(STATIONS.length){
-      const firstBtn=stationListEl.querySelector('.station');
-      toggleStation(STATIONS[0],firstBtn);
-    }
+    npTitle.textContent='Choose YouTube, Spotify, or Apple Music below';
   };
 
   vol.oninput=function(){
